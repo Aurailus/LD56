@@ -1,8 +1,8 @@
 import { ComponentChildren, h } from "preact";
 import { useCallback, useMemo, useRef, useState } from "preact/hooks";
-import { GameState, GameStateContext, GameStateContextData, GameStateContextHooks, State } from "../contexts/GameState";
 import { Vector2 } from "three";
-import { CollisionResult, EntityInstance, EntityProps } from "../hooks/UseEntity";
+import { CollisionResult, Entity } from "../hooks/UseEntity";
+import { InputState, LevelState, LevelStateContext, LevelStateData } from "../hooks/UseLevel";
 
 interface Props {
 	tilemap: number[][],
@@ -12,69 +12,75 @@ interface Props {
 let dvorak = true;
 
 export function Level(props: Props) {
-	const currentGameState = useRef<GameState>(null as any);
+	const [ integrity, setIntegrity ] = useState<number>(0);
+	const rerender = useCallback(() => setIntegrity(i => i + 1), []);
 
-	const [ state, setGameState ] = useState<GameStateContextData>(() => ({
-		state: State.Input,
-		tilemap: props.tilemap,
-		entities: []
-	}));
+	const data = useMemo<LevelStateData>(() => ({ 
+		entities: [], 
+		inputState: InputState.Input,
+		tilemap: props.tilemap
+	}), []);
 
-	const current = useCallback(() => currentGameState.current, []);
 
-	const pausePromises = useRef<Promise<void>[]>([]);
-
-	const stepGame = useCallback(() => {
-		setGameState(state => {
-			Promise.all(state.entities.map(e => e.props.onStep()))
-				.then(() => setGameState(state => ({ ...state, state: State.Input })));
-			return { ...state, state: State.Response };
-		});
+	const step = useCallback(async () => {
+		data.inputState = InputState.Waiting;
+		await Promise.all(data.entities.map(e => e.props.onStep()));
+		data.inputState = InputState.Input;
 	}, []);
 
-	const collides = useCallback((pos: Vector2, other: EntityInstance) => {
-		console.log('checking collides at ', pos);
-		let res: CollisionResult = [ current().tilemap[pos.y][pos.x] !== 0, () => Promise.resolve() ]
-		for (let ent of current().entities) {
-			if (!ent.pos.equals(pos) || ent === other) continue;
-			res = ent.props.onIntersect(other);
-			break;
+	const collides = useCallback((pos: Vector2, other: Entity) => {
+		let res: CollisionResult = {
+			blockMovement: data.tilemap[pos.y][pos.x] !== 0,
+			entity: null,
+			onCollide: () => Promise.resolve()
+		}
+		for (let ent of data.entities) {
+			if (ent.data.pos.equals(pos) && ent !== other) {
+				res = ent.props.onIntersect(other);
+				break;
+			}
 		}
 		return res;
 	}, []);
 
-	const pauseUntil = useCallback((res: Promise<void>) => {
-		setGameState(state => ({ ...state, state: State.Response }));
-		pausePromises.current.push(res);
-		const currPromises = [ ...pausePromises.current ];
+	const awaitingPromises = useRef<Promise<void>[]>([]);
+	const awaitFn = useCallback((promise: Promise<void>) => new Promise<void>(res => {
+		data.inputState = InputState.Waiting;
+		awaitingPromises.current.push(promise);
+		let currPromises = [ ...awaitingPromises.current ];
 		const cb = () => {
-			pausePromises.current = pausePromises.current.filter(pr => !currPromises.includes(pr));
-			if (pausePromises.current.length === 0) setGameState(state => ({ ...state, state: State.Input }));
-			else Promise.all(pausePromises.current).then(cb);
+			awaitingPromises.current = awaitingPromises.current.filter(pr => !currPromises.includes(pr));
+			if (awaitingPromises.current.length === 0) {
+				data.inputState = InputState.Input;
+				res();
+			}
+			else {
+				Promise.all(currPromises).then(cb);
+				currPromises = [ ...awaitingPromises.current ];
+			}
 		}
-		Promise.all(pausePromises.current).then(cb);
-	}, [])
+		Promise.all(currPromises).then(cb);
+	}), [])
 
-	const hooks = useMemo<GameStateContextHooks>(() => ({
-		stepGame,
+	const levelState = useMemo<LevelState>(() => ({
+		data,
+		await: awaitFn,
 		collides,
-		current,
-		pauseUntil,
-	}), [ stepGame, collides, current ])
+		step,
+	}), []);
 
-	const gameState = useMemo(() => ({ ...state, ...hooks }), [ state, hooks ]);
-	currentGameState.current = gameState;
+	const diffedLevelState = useMemo(() => ({ ...levelState }), [ integrity ]);
 
 	return (
-		<GameStateContext.Provider value={gameState}>
+		<LevelStateContext.Provider value={diffedLevelState}>
 			<div class="relative grid [&>*]:[grid-area:a]" style={{
 				gridTemplateAreas: "a",
-				width: 32 * state.tilemap[0].length, 
-				height: 32 * state.tilemap.length,
+				width: 32 * data.tilemap[0].length, 
+				height: 32 * data.tilemap.length,
 				transform: `scale(3)`,
 			}}>
 				{props.children}
 			</div>
-		</GameStateContext.Provider>
+		</LevelStateContext.Provider>
 	);
 }

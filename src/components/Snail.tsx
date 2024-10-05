@@ -1,56 +1,58 @@
 import { h } from "preact"
 import { Vector2 } from "three";
-import { CollisionResult, EntityInstance, useEntity } from "../hooks/UseEntity";
+import { Entity, useEntity } from "../hooks/UseEntity";
 
 import img_snail from "../../res/snail.png"
 import img_snail_hide from "../../res/snail_hide.png"
 
-import { useRef } from "preact/hooks";
-import { useGameState } from "../hooks/UseGameState";
+import { useMemo, useRef } from "preact/hooks";
+import { useLevel } from "../hooks/UseLevel";
 
 interface Props {
 	pos: Vector2;
 }
 
 export function Snail(props: Props) {
-	const state = useGameState();
+	const level = useLevel();
 	const ref = useRef<HTMLDivElement>(null);
-	
-	const entity = useEntity(() => ({
+	const uuid = useMemo(() => Math.floor(Math.random() * 1000), []);
+	const ent = useEntity(() => ({
 		name: "Snail",
 		pos: props.pos,
 		collides: () => true,
-		onIntersect: (other: EntityInstance) => {
-			const ogPos = entity.current().pos.clone();
-			const posDiff = ogPos.clone().sub(other.current().pos);
-			const dstPos = entity.current().pos.clone();
-			console.log("position diff", other.current().pos, ogPos, posDiff)
+		onIntersect: (other: Entity) => {
+			const posDiff = ent.data.pos.clone().sub(other.data.pos);
+			const dstPos = ent.data.pos.clone();
+			const initialPos = ent.data.pos.clone();
+			console.log(uuid, "position diff", posDiff)
 			while (true) {
-				console.log("checking position at", dstPos, "snail pos: ", entity.current().pos)
-				entity.setPos(dstPos);
-				if (state.current().collides(dstPos.clone().add(posDiff), entity.current())[0]) break;
+				ent.data.pos = dstPos;
+				const collision = level.collides(dstPos.clone().add(posDiff), ent);
+				if (collision.blockMovement || collision.entity?.props.name === "Snail") break;
 				dstPos.add(posDiff);
 			}
-			entity.setPos(ogPos);
-
-			if (dstPos.equals(entity.current().pos)) return [ true, async () => {
-				ref.current!.style.background = `url(${img_snail_hide})`;
-				entity.setPos(dstPos);
-				setTimeout(() => {
-					ref.current!.style.background = `url(${img_snail})`
-				}, 160);
-			} ];
-
-			return [ false, async () => {
-				ref.current!.style.background = `url(${img_snail_hide})`;
-				entity.setPos(dstPos);
-				state.pauseUntil(new Promise((res) => setTimeout(res, 90)));
-				setTimeout(() => {
-					ref.current!.style.background = `url(${img_snail})`
-				}, 300);
-				setTimeout(() => state.current().collides(dstPos.clone().add(posDiff), entity)[1](), 80);
-				await new Promise((res) => setTimeout(res, 80));
-			}]
+			console.log(uuid, 'collided at ', dstPos);
+			ent.data.pos = initialPos;
+			const canMove = !dstPos.equals(initialPos);
+			return {
+				blockMovement: !canMove,
+				entity: ent,
+				onCollide: canMove ? async () => {
+					ref.current!.style.background = `url(${img_snail_hide})`;
+					ent.setPos(dstPos);
+					level.await(new Promise((res) => setTimeout(res, 90)));
+					setTimeout(() => {
+						ref.current!.style.background = `url(${img_snail})`
+					}, 300);
+					setTimeout(() => level.collides(dstPos.clone().add(posDiff), ent).onCollide(), 80);
+					await new Promise((res) => setTimeout(res, 80));
+				} : async () => {
+					ref.current!.style.background = `url(${img_snail_hide})`;
+					setTimeout(() => {
+						ref.current!.style.background = `url(${img_snail})`
+					}, 160);
+				}
+			};
 		},
 		onStep: () => Promise.resolve(),
 	}))
@@ -60,7 +62,7 @@ export function Snail(props: Props) {
 			class="size-8 bg-cover absolute transition-[translate] duration-100"
 			style={{
 				background: `url(${img_snail})`,
-				translate: `${entity.pos.x * 32}px ${entity.pos.y * 32}px`
+				translate: `${ent.data.pos.x * 32}px ${ent.data.pos.y * 32}px`
 			}}
 		>
 		</div>
