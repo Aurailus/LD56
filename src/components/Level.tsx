@@ -21,11 +21,12 @@ export function Level(props: Props) {
 		tilemap: props.tilemap
 	}), []);
 
+	const awaitingPromises = useRef<Promise<void>[]>([]);
 
 	const step = useCallback(async () => {
 		data.inputState = InputState.Waiting;
 		await Promise.all(data.entities.map(e => e.props.onStep()));
-		data.inputState = InputState.Input;
+		if (awaitingPromises.current.length === 0) data.inputState = InputState.Input;
 	}, []);
 
 	const collides = useCallback((pos: Vector2, other: Entity) => {
@@ -35,15 +36,15 @@ export function Level(props: Props) {
 			onCollide: () => Promise.resolve()
 		}
 		for (let ent of data.entities) {
-			if (ent.data.pos.equals(pos) && ent !== other) {
-				res = ent.props.onIntersect(other);
+			if (ent.data.pos.equals(pos) && ent !== other && !ent.data.dead) {
+				const entityRes = ent.props.onIntersect(ent, other);
+				res = { ...entityRes, entity: ent }; 
 				break;
 			}
 		}
 		return res;
 	}, []);
 
-	const awaitingPromises = useRef<Promise<void>[]>([]);
 	const awaitFn = useCallback((promise: Promise<void>) => new Promise<void>(res => {
 		data.inputState = InputState.Waiting;
 		awaitingPromises.current.push(promise);

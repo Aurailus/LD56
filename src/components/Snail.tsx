@@ -5,40 +5,38 @@ import { Entity, useEntity } from "../hooks/UseEntity";
 import img_snail from "../../res/snail.png"
 import img_snail_hide from "../../res/snail_hide.png"
 
-import { useMemo, useRef } from "preact/hooks";
+import { useRef } from "preact/hooks";
 import { useLevel } from "../hooks/UseLevel";
+import { posToTranslate } from "../Util";
 
 interface Props {
 	pos: Vector2;
 }
 
+const ID = "Snail";
+
 export function Snail(props: Props) {
 	const level = useLevel();
 	const ref = useRef<HTMLDivElement>(null);
-	const uuid = useMemo(() => Math.floor(Math.random() * 1000), []);
 	const ent = useEntity(() => ({
-		name: "Snail",
+		name: ID,
 		pos: props.pos,
-		collides: () => true,
-		onIntersect: (other: Entity) => {
+		onIntersect: (_, other) => {
 			const posDiff = ent.data.pos.clone().sub(other.data.pos);
-			const dstPos = ent.data.pos.clone();
-			const initialPos = ent.data.pos.clone();
-			console.log(uuid, "position diff", posDiff)
-			while (true) {
-				ent.data.pos = dstPos;
-				const collision = level.collides(dstPos.clone().add(posDiff), ent);
-				if (collision.blockMovement || collision.entity?.props.name === "Snail") break;
-				dstPos.add(posDiff);
-			}
-			console.log(uuid, 'collided at ', dstPos);
-			ent.data.pos = initialPos;
-			const canMove = !dstPos.equals(initialPos);
+			const canMove = !level.collides(ent.data.pos.clone().add(posDiff), ent).blockMovement;
 			return {
 				blockMovement: !canMove,
 				entity: ent,
 				onCollide: canMove ? async () => {
 					ref.current!.style.background = `url(${img_snail_hide})`;
+					let dstPos = ent.data.pos.clone();
+					while (true) {
+						ent.data.pos = dstPos;
+						const collision = level.collides(dstPos.clone().add(posDiff), ent);
+						if (collision.blockMovement || collision.entity?.props.name === ID) break;
+						collision.onCollide();
+						dstPos.add(posDiff);
+					}
 					ent.setPos(dstPos);
 					level.await(new Promise((res) => setTimeout(res, 90)));
 					setTimeout(() => {
@@ -59,10 +57,10 @@ export function Snail(props: Props) {
 
 	return (
 		<div ref={ref}
-			class="size-8 bg-cover absolute transition-[translate] duration-100"
+			class="size-8 bg-cover absolute transition-[translate] duration-100 z-10"
 			style={{
 				background: `url(${img_snail})`,
-				translate: `${ent.data.pos.x * 32}px ${ent.data.pos.y * 32}px`
+				translate: posToTranslate(ent.data.pos)
 			}}
 		>
 		</div>
