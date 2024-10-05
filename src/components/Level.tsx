@@ -1,122 +1,80 @@
-import { Fragment, h } from "preact";
-import { useCallback, useEffect, useMemo, useState } from "preact/hooks";
-import { Entity } from "../entities/Entity";
+import { ComponentChildren, h } from "preact";
+import { useCallback, useMemo, useRef, useState } from "preact/hooks";
+import { GameState, GameStateContext, GameStateContextData, GameStateContextHooks, State } from "../contexts/GameState";
 import { Vector2 } from "three";
-import { Player } from "../entities/Player";
-
-// A VERY SIMPLE tile-map which represents the static terrain
-// A list of entities which can exist within the grid
-// Entities need to have some sort of behavior for when a creature enters its space
-// Player has to be controlled with WASD
-// UNDO would be nice
-
-enum State {
-	Input,
-	Response
-}
-
-const MIN_MOVE_INTERVAL = 150;
-const MIN_INPUT_TIMEOUT = 80;
+import { CollisionResult, EntityInstance, EntityProps } from "../hooks/UseEntity";
 
 interface Props {
-	entities: () => Entity[],
 	tilemap: number[][],
-	background: string
-	startPos: Vector2
+	children: ComponentChildren;
 }
 
 let dvorak = true;
 
 export function Level(props: Props) {
-	const [ , setIntegrity ] = useState<number>(0);
+	const currentGameState = useRef<GameState>(null as any);
 
-	const player = useMemo(() => new Player(props.startPos), [])
-	const [ entities, setEntities ] = useState<Entity[]>(() => [ ...props.entities(), player ])
-	const [ tilemap, setTilemap ] = useState<number[][]>(props.tilemap)
-	
-	const rerender = useCallback(() => setIntegrity(i => i + 1), []);
+	const [ state, setGameState ] = useState<GameStateContextData>(() => ({
+		state: State.Input,
+		tilemap: props.tilemap,
+		entities: []
+	}));
 
-	useEffect(() => {
-		let movementDirection = new Vector2();
-		let lastMovementKey: string = "";
-		let state: State = State.Input;
-		// setInterval(() => {
-		// 	entities.forEach(e => e.onStep());
-		// 	rerender();
-		// }, 1000);
+	const current = useCallback(() => currentGameState.current, []);
 
-		const animCallback = () => {
-			if (state === State.Input && movementDirection.lengthSq() !== 0) {
-				const newPos = player.pos.clone().add(movementDirection);
-				if (tilemap[newPos.y][newPos.x] !== 0) {
-					player.bump(newPos);
-				}
-				else {
-					player.pos = newPos;
-					setTimeout(() => {
-						movementDirection = new Vector2()
-					}, MIN_INPUT_TIMEOUT);
-					state = State.Response;
-					Promise.all([
-						...entities.map(e => e.onStep()),
-						new Promise<void>(res => setTimeout(() => res(), MIN_MOVE_INTERVAL))
-					]).then(() => {
-						state = State.Input;
-					})
-					rerender();
-				}
+	const pausePromises = useRef<Promise<void>[]>([]);
 
+	const stepGame = useCallback(() => {
+		setGameState(state => {
+			Promise.all(state.entities.map(e => e.props.onStep()))
+				.then(() => setGameState(state => ({ ...state, state: State.Input })));
+			return { ...state, state: State.Response };
+		});
+	}, []);
 
-			}
-			requestAnimationFrame(animCallback);
+	const collides = useCallback((pos: Vector2, other: EntityInstance) => {
+		console.log('checking collides at ', pos);
+		let res: CollisionResult = [ current().tilemap[pos.y][pos.x] !== 0, () => Promise.resolve() ]
+		for (let ent of current().entities) {
+			if (!ent.pos.equals(pos) || ent === other) continue;
+			res = ent.props.onIntersect(other);
+			break;
 		}
-		animCallback();
+		return res;
+	}, []);
 
-		const keyDownCallback = (e: KeyboardEvent) => {
-			if ((e.key === "w" && !dvorak) || (e.key === "," && dvorak) || (e.key === "ArrowUp")) {
-				movementDirection = new Vector2(0, -1);
-				lastMovementKey = e.key;
-			}
-			else if ((e.key === "a" && !dvorak) || (e.key === "a" && dvorak) || (e.key === "ArrowLeft")) {
-				movementDirection = new Vector2(-1, 0);
-				lastMovementKey = e.key;
-			}
-			else if ((e.key === "s" && !dvorak) || (e.key === "o" && dvorak) || (e.key === "ArrowDown")) {
-				movementDirection = new Vector2(0, 1);
-				lastMovementKey = e.key;
-			}
-			else if ((e.key === "d" && !dvorak) || (e.key === "e" && dvorak) || (e.key === "ArrowRight")) {
-				movementDirection = new Vector2(1, 0);
-				lastMovementKey = e.key;
-			}
+	const pauseUntil = useCallback((res: Promise<void>) => {
+		setGameState(state => ({ ...state, state: State.Response }));
+		pausePromises.current.push(res);
+		const currPromises = [ ...pausePromises.current ];
+		const cb = () => {
+			pausePromises.current = pausePromises.current.filter(pr => !currPromises.includes(pr));
+			if (pausePromises.current.length === 0) setGameState(state => ({ ...state, state: State.Input }));
+			else Promise.all(pausePromises.current).then(cb);
 		}
-
-		const keyUpCallback = (e: KeyboardEvent) => {
-			// if (e.key === lastMovementKey) {
-			// 	movementDirection = new Vector2();
-			// }
-		}
-
-		window.addEventListener('keydown', keyDownCallback);
-		window.addEventListener('keyup', keyUpCallback);
-
-		return () => {
-			window.removeEventListener('keydown', keyDownCallback);
-			window.removeEventListener('keyup', keyUpCallback);
-		}
-
+		Promise.all(pausePromises.current).then(cb);
 	}, [])
+
+	const hooks = useMemo<GameStateContextHooks>(() => ({
+		stepGame,
+		collides,
+		current,
+		pauseUntil,
+	}), [ stepGame, collides, current ])
+
+	const gameState = useMemo(() => ({ ...state, ...hooks }), [ state, hooks ]);
+	currentGameState.current = gameState;
+
 	return (
-		<div 
-			class="bg-cover" 
-			style={{ 
+		<GameStateContext.Provider value={gameState}>
+			<div class="relative grid [&>*]:[grid-area:a]" style={{
+				gridTemplateAreas: "a",
+				width: 32 * state.tilemap[0].length, 
+				height: 32 * state.tilemap.length,
 				transform: `scale(3)`,
-				backgroundImage: `url(${props.background})`, 
-				width: 32 * tilemap[0].length, 
-				height: 32 * tilemap.length
-			}}
-		>
-			{entities.map((e, i) => <Fragment key={i}>{e.render()}</Fragment>)}
-		</div>
+			}}>
+				{props.children}
+			</div>
+		</GameStateContext.Provider>
 	);
 }
