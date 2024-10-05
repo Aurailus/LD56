@@ -1,6 +1,6 @@
 import { useContext } from "preact/hooks";
 import { createContext } from "preact";
-import { CollisionResult, Entity } from "./UseEntity";
+import { PushResult, CollisionResult, AnyEntity } from "./UseEntity";
 import { Vector2 } from "three";
 
 export enum InputState {
@@ -11,14 +11,17 @@ export enum InputState {
 export type LevelStateData = {
 	inputState: InputState;
 	tilemap: number[][]
-	entities: Entity[]
+	entities: AnyEntity[]
 }
 
 export type LevelState = {
 	data: LevelStateData
 	
 	step(): Promise<void>;
-	collides(pos: Vector2, other: Entity): CollisionResult;
+	testCollision(pos: Vector2, other: AnyEntity): CollisionResult;
+	testPush(pos: Vector2, other: AnyEntity): PushResult
+	getTile(pos: Vector2): number;
+	getEntity(pos: Vector2, ignore?: AnyEntity): AnyEntity | null;
 	await(res: Promise<void>): Promise<void>;
 };
 

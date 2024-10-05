@@ -1,15 +1,14 @@
 import { ComponentChildren, h } from "preact";
 import { useCallback, useMemo, useRef, useState } from "preact/hooks";
 import { Vector2 } from "three";
-import { CollisionResult, Entity } from "../hooks/UseEntity";
+import { PushResult, Entity, CollisionResult, AnyEntity } from "../hooks/UseEntity";
 import { InputState, LevelState, LevelStateContext, LevelStateData } from "../hooks/UseLevel";
+import { Tile } from "../Tile";
 
 interface Props {
 	tilemap: number[][],
 	children: ComponentChildren;
 }
-
-let dvorak = true;
 
 export function Level(props: Props) {
 	const [ integrity, setIntegrity ] = useState<number>(0);
@@ -23,28 +22,6 @@ export function Level(props: Props) {
 
 	const awaitingPromises = useRef<Promise<void>[]>([]);
 
-	const step = useCallback(async () => {
-		data.inputState = InputState.Waiting;
-		await Promise.all(data.entities.map(e => e.props.onStep()));
-		if (awaitingPromises.current.length === 0) data.inputState = InputState.Input;
-	}, []);
-
-	const collides = useCallback((pos: Vector2, other: Entity) => {
-		let res: CollisionResult = {
-			blockMovement: data.tilemap[pos.y][pos.x] !== 0,
-			entity: null,
-			onCollide: () => Promise.resolve()
-		}
-		for (let ent of data.entities) {
-			if (ent.data.pos.equals(pos) && ent !== other && !ent.data.dead) {
-				const entityRes = ent.props.onIntersect(ent, other);
-				res = { ...entityRes, entity: ent }; 
-				break;
-			}
-		}
-		return res;
-	}, []);
-
 	const awaitFn = useCallback((promise: Promise<void>) => new Promise<void>(res => {
 		data.inputState = InputState.Waiting;
 		awaitingPromises.current.push(promise);
@@ -56,17 +33,69 @@ export function Level(props: Props) {
 				res();
 			}
 			else {
-				Promise.all(currPromises).then(cb);
 				currPromises = [ ...awaitingPromises.current ];
+				Promise.all(currPromises).then(cb);
 			}
 		}
 		Promise.all(currPromises).then(cb);
 	}), [])
 
+	const step = useCallback(async () => {
+		data.inputState = InputState.Waiting;
+		await awaitFn(Promise.resolve());
+		data.inputState = InputState.Waiting;
+		await Promise.all(data.entities.map(e => e.props.onStep(e)));
+		await awaitFn(Promise.resolve());
+	}, []);
+
+	const testCollision = useCallback((pos: Vector2, other: AnyEntity) => {
+		const tile = data.tilemap[pos.y][pos.x];
+		let res: CollisionResult = {
+			collides: other.props.name === "Player" 
+				? (tile !== Tile.Ground && tile !== Tile.RoughGround) 
+				: (tile !== Tile.Ground && tile !== Tile.Water),
+			entity: null
+		}
+		for (let ent of data.entities) {
+			if (ent.data.pos.equals(pos) && ent !== other && !ent.data.dead) {
+				const collides = ent.props.canCollide(ent, other);
+				res = { collides, entity: ent }; 
+				break;
+			}
+		}
+		return res;
+	}, [])
+
+	const testPush = useCallback((pos: Vector2, other: AnyEntity) => {
+		let res: PushResult = {
+			canPush: false,
+			entity: null
+		}
+		for (let ent of data.entities) {
+			if (ent.data.pos.equals(pos) && ent !== other && !ent.data.dead) {
+				const canPush = ent.props.canPush(ent, other);
+				res = { canPush, entity: ent }; 
+				break;
+			}
+		}
+		return res;
+	}, []);
+
+	const getTile = useCallback((pos: Vector2) => {
+		return data.tilemap[pos.y][pos.x];
+	}, []);
+
+	const getEntity = useCallback((pos: Vector2, ignore?: AnyEntity) => {
+		return data.entities.find(ent => ent.data.pos.equals(pos) && ent.data !== ignore?.data) ?? null;
+	}, []);
+
 	const levelState = useMemo<LevelState>(() => ({
 		data,
 		await: awaitFn,
-		collides,
+		testCollision,
+		testPush,
+		getTile,
+		getEntity,
 		step,
 	}), []);
 

@@ -1,50 +1,42 @@
 import { h } from 'preact';
-import { Level } from './Level';
-import { Vector2 } from 'three';
-import { range } from '../Util';
+import { Level0 } from '../levels/Level0';
+import { Level1 } from '../levels/Level1';
+import useStore from '../hooks/UseStore';
+import { useEffect } from 'preact/hooks';
+import { Level3 } from '../levels/Level3';
+import { Level4 } from '../levels/Level4';
+import { Level2 } from '../levels/Level2';
+import { Level5 } from '../levels/Level5';
+import { Level6 } from '../levels/Level6';
+import { Level7 } from '../levels/Level7';
 
-import img_level_0 from '../../res/level_0.png';
-import { Background } from './Background';
-import { Player } from './Player';
-import { Snail } from './Snail';
-import { Inchworm } from './Inchworm';
-import { Direction, Woodbug } from './Woodbug';
-import { Log } from './Log';
+const LEVELS = [
+	Level0,
+	Level1,
+	Level2,
+	Level3,
+	Level4,
+	Level5,
+	Level6,
+	Level7,
+];
 
 export default function App() {
+	const level = useStore<number>(7);
+	const LevelComponent = LEVELS[level()];
+
+	useEffect(() => {
+		const keydownEvent = (e: KeyboardEvent) => {
+			if (e.key === ">") level(l => l + 1);
+			else if (e.key === "<") level(l => l - 1);
+		}
+		window.addEventListener("keydown", keydownEvent);
+		return () => window.addEventListener("keyup", keydownEvent);
+	}, []);
+
 	return (
 		<div class="w-screen h-screen grid place-items-center bg-slate-800">
-			<Level 
-				tilemap={[
-					range(0, 7).map(() => 1),
-					[1, 0, 1, 0, 0, 0, 1],
-					range(0, 7).map(i => i === 0 || i === 6 ? 1 : 0),
-					[1, 0, 0, 1, 1, 0, 1],
-					range(0, 7).map(i => i === 0 || i === 6 ? 1 : 0),
-					range(0, 7).map(i => i === 0 || i === 6 ? 1 : 0),
-					range(0, 7).map(() => 1),
-				]}
-			>
-				<Background image={img_level_0}/>
-				<Player pos={new Vector2(5, 5)}/>
-				<Snail pos={new Vector2(5, 3)}/>
-				<Snail pos={new Vector2(5, 4)}/>
-				<Log pos={new Vector2(4, 4)}/>
-				{/* <Inchworm path={[ 
-					new Vector2(1, 5), 
-					new Vector2(1, 4), 
-					new Vector2(1, 3), 
-					new Vector2(2, 3),
-					new Vector2(2, 4), 
-					new Vector2(3, 4), 
-					new Vector2(3, 5), 
-					new Vector2(2, 5)
-				]} 
-				head={2}
-				length={4}
-			></Inchworm> */}
-			<Woodbug direction={null} pos={new Vector2(3, 4)}></Woodbug>
-			</Level>
+			<LevelComponent/>
 		</div>
 	);
 }

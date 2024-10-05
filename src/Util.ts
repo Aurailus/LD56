@@ -48,4 +48,5 @@ export const bumpElem = (elem: HTMLElement | null, dir: Vector2, mag: number = 1
 			elem.style.translate = posToTranslate(currPos);
 		}, 50);
 	}
+	return wait(100);
 }

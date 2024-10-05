@@ -1,6 +1,6 @@
 import { Fragment, h } from "preact"
 import { Vector2 } from "three";
-import { Entity, useEntity } from "../hooks/UseEntity";
+import { AnyEntity, useEntity } from "../hooks/UseEntity";
 
 import img_path_ns from "../../res/inchworm_path_ns.png"
 import img_path_nw from "../../res/inchworm_path_nw.png"
@@ -56,7 +56,6 @@ const BUTT_IMAGES: EndSegmentImages = {
 	e: img_butt_e,
 }
 
-
 const isCorner = (path: Vector2[], ind: number) => {
 	const diff = path[(ind + 1) % path.length].clone().sub(path[(ind - 1 + path.length) % path.length]);
 	return diff.x !== 0 && diff.y !== 0;
@@ -91,15 +90,16 @@ const getRotatedEndSegment = (images: EndSegmentImages, path: Vector2[], ind: nu
 	else return [images.e, diff.x < 0];
 }
 
-import { useCallback, useRef, useState } from "preact/hooks";
+import { useCallback, useRef } from "preact/hooks";
 import { useLevel } from "../hooks/UseLevel";
-import { range, posToTranslate, wait, bumpElem } from "../Util";
+import { range, posToTranslate, wait } from "../Util";
 import useStore from "../hooks/UseStore";
 
 interface Props {
 	path: Vector2[];
 	head: number;
 	length: number;
+	delay: number;
 }
 
 const BODY_ID = "InchwormBody";
@@ -111,61 +111,78 @@ export function Inchworm(props: Props) {
 	
 	const head = useStore<number>(props.head);
 	const length = useStore<number>(props.length);
-	const tillExpand = useStore<number>(-1);
+	const delayTillExpand = useStore<number>(-1);
 
-	const entities: Entity[] = [];
-	const refs = useRef<(HTMLElement | null)[]>([]);
+	const entities: AnyEntity[] = [];
 
 	const contractWorm = useCallback(async () => {
-		tillExpand(4)
+		delayTillExpand(props.delay)
 		for (let i = 0; i < props.length - 2; i++) {
 			length(r => r - 1);
 			level.await(wait(110));
 			await wait(100);
 		}
 		entities.slice(0, entities.length - 2).forEach(ent => ent.setPos(new Vector2(-100, -100)));
+		level.await(wait(200));
 	}, [])
 
 	const expandWorm = useCallback(async () => {
-		for (let i = 0; i < props.length - 2; i++) {
-			length(r => r + 1);
-			head(h => (h + 1) % props.path.length);
-			level.await(wait(110));
-			await wait(100);
+		const loopCount = props.length - length();
+		for (let i = 0; i < loopCount; i++) {
+			const ent = entities[entities.length - 1];
+			const headPos = props.path[head() % props.path.length];
+			const nextPos = props.path[(head() + 1) % props.path.length]
+			ent.data.pos = headPos;
+			const collides = level.testCollision(nextPos, ent);
+			const pushable = level.testPush(nextPos, ent);
+			if (!collides.collides || pushable.canPush) {
+				level.await(collides.entity?.props.onCollide(collides.entity, ent) ?? Promise.resolve());
+				if (pushable) level.await(pushable.entity?.props.onPush(pushable.entity, ent) ?? Promise.resolve());
+				length(r => r + 1);
+				head(h => (h + 1) % props.path.length);
+				level.await(wait(110));
+				await wait(100);
+			}
+			else {
+				wait(150)
+				.then(() => Promise.all(entities.map((ent) => ent?.bump(nextPos))))
+				.then(() => entities.forEach((ent, indRaw) => {
+					const ind = (head() - indRaw + props.path.length) % props.path.length
+					if (!ent.data.ref.current) return;
+					ent.data.ref.current.style.translate = posToTranslate(props.path[ind]);
+				}));
+				level.await(wait(100));
+				break;
+			}
 		}
-		range(props.length).map(indRaw => {
-			const pos = props.path[(head() + indRaw - props.length + 1 + props.path.length) % props.path.length] 
-			console.log(pos)
-			// const ind = (head() - indRaw + 1 + props.path.length) % props.path.length;
+		range(length()).map(indRaw => {
+			const pos = props.path[(head() + indRaw - length() + 1 + props.path.length) % props.path.length] 
 			entities[indRaw].setPos(pos);
 		})
 	}, [])
 
 	entities.push(...range(props.length).map((indRaw) => {
 		const ind = (props.head - indRaw + 1 + props.path.length) % props.path.length;
-		const isButt = indRaw === 0;
+		const isHead = indRaw === props.length - 1;
 		const ent = useEntity(() => ({
 			name: ind === 0 ? HEAD_ID : ind === props.length - 1 ? TAIL_ID : BODY_ID,
+			data: {},
 			pos: props.path[(head() + indRaw - props.length + 1 + props.path.length) % props.path.length],
-			onIntersect: (self, other) => {
-				const diff = self.data.pos.clone().sub(other.data.pos);
-				wait(50).then(() => entities.forEach((_, i) => refs.current[i] ? bumpElem(refs.current[i]!, diff) : null));
-				return isButt ? ({
-					blockMovement: false,
-					onCollide: async () => {
-						contractWorm();
-						await wait(80);
-					}
-				}) : ({
-					blockMovement: true,
-					onCollide: () => Promise.resolve() 
-				})
+			canCollide: () => true,
+			onCollide: async (ent, other) => {
+				const diff = ent.data.pos.clone().sub(other.data.pos);
+				wait(50).then(() => entities.forEach((ent, i) => ent.bump(ent.data.pos.clone().add(diff))));
 			},
-			onStep: isButt ? async () => {
-				if (tillExpand() !== -1) {
-					tillExpand(n => n - 1);
-					if (tillExpand() === 0) expandWorm();
-				}
+			canPush: (ent) => {
+				return (ent === entities[0]) && length() === props.length;
+			},
+			onPush: async (self, other) => {
+				if (!self.props.canPush(self, other)) return;
+				await contractWorm();
+			},
+			onStep: isHead ? async (self) => {
+				delayTillExpand(d => Math.max(d - 1, -1));
+				if (length() < props.length && delayTillExpand() < 0) expandWorm(); 
 			} : undefined
 		}));
 		return ent;
@@ -196,7 +213,7 @@ export function Inchworm(props: Props) {
 				const pos = props.path[ind];
 				return (
 					<div 
-						ref={(e) => { refs.current[indRaw] = e; }}
+						ref={entities[indRaw].data.ref}
 						class="size-8 bg-cover absolute transition-[translate] duration-100 z-0"
 						style={{
 							background: `url(${img})`,

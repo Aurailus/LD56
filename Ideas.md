@@ -33,3 +33,7 @@ TINY CREATURES
 ## Idea
 
 Sokoban-type game where you control a Poodle Moth trying to get to the other side of a board, which is full of other creatures and obstacles that get in your way! Different creatures have different mechanical interactions that you can engage with.
+
+- Leaves that crunch into a pit when stepped on
+- Water which things can fall into and create walkable surfaces
+- Naked snails that go into empty shells
