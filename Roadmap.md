@@ -1,11 +1,8 @@
 # TODO LIST (In order of Priority)
 
 [x] Frog textures
-[ ] SOUND EFFECTS
+[x] SOUND EFFECTS
 [ ] More levels
-
-[ ] Turn counter onscreen
-[ ] Level completed stats on map screen (turns, time)
 
 [x] Inchworm textures
 [x] Finishing the terrain graphics
@@ -15,6 +12,8 @@
 [x] Toggle tilt effect with query parameter
 [x] Preload the images (so that things don't flicker as much)
 
+[ ] Turn counter onscreen
+[ ] Level completed stats on map screen (turns, time)
 [ ] Waterskeeter (ice physics transport on water)
 
 # SFX
