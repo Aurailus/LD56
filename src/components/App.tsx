@@ -7,6 +7,7 @@ import { LEVELS } from '../levels';
 import useStoredState from '../hooks/UseStoredState';
 import { LEVEL_PROGRESS_NONE, LevelProgress } from '../LevelProgress';
 import clsx from 'clsx';
+import { NO_MOTION } from '../Main';
 
 enum Scene {
 	Menu = 1,
@@ -38,26 +39,22 @@ export default function App() {
 		scene(Scene.Level);
 	}, []);
 
-	const returnToMenu = useCallback(() => {
+	const onQuit = useCallback(() => {
 		scene(Scene.Menu);
 	}, []);
 
-	useEffect(() => {
-		const keydownEvent = (e: KeyboardEvent) => {
-			if (e.key === ">") currLevel(l => l + 1);
-			else if (e.key === "<") currLevel(l => l - 1);
-			else if (e.key === "Escape" && scene() === Scene.Level) scene(Scene.Menu);
-		}
-		window.addEventListener("keydown", keydownEvent);
-		return () => window.addEventListener("keyup", keydownEvent);
-	}, []);
+	const onComplete = useCallback((numMoves: number, usedUndo: boolean) => {
+		const minMoves = LEVELS[currLevel()].minMoves;
+		setLevelProgress(currLevel(), { completed: true, minMoves: numMoves <= minMoves, noUndo: !usedUndo });
+		scene(Scene.Menu);
+	}, [])
 
 	return (
 		<div class={clsx("w-screen h-screen grid transition-all duration-300 bg-sky-500", 
-			scene() === Scene.Level && "!bg-slate-800")}>
+			scene() === Scene.Level && "!bg-slate-800", NO_MOTION && "no-motion")}>
 			{scene() === Scene.Menu 
 				? <MenuScene getLevelProgress={getLevelProgress} startLevel={startLevel}/> 
-				: <LevelScene level={currLevel()} returnToMenu={returnToMenu}/>}
+				: <LevelScene level={currLevel()} onQuit={onQuit} onComplete={onComplete}/>}
 		</div>
 		
 	)

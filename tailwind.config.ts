@@ -12,7 +12,7 @@ module.exports = {
       },
       animation: {
         'part-moving': 'part-moving 0.075s ease-out 1 forwards',
-        'text-bob': 'text-bob 1s ease-in-out calc(-100s + var(--i) * 0.1s) infinite',
+        'text-bob': 'text-bob 1s ease-in-out calc(-100s - var(--i) * 0.1s) infinite',
         'text-wobble': 'text-wobble 0.3s linear calc(-100s + var(--i) * 0.1s) infinite',
         'text-scale': 'text-scale 1s ease-in-out calc(-100s + var(--i) * 0.1s) infinite',
         'letter-in': 'letter-in 0.1s cubic-bezier(0.5, 0.04, 0.6, 1.4) 1 forwards',

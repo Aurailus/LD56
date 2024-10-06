@@ -1,71 +1,119 @@
 import { h } from "preact"
 import { Vector2 } from "three";
 import { useEntity } from "../hooks/UseEntity";
+
+import img_snail from "../../res/woodbug.png"
+import img_snail_2 from "../../res/woodbug_2.png"
+import img_snail_hide from "../../res/woodbug_ball.png"
+import img_woodbug_submerged from "../../res/woodbug_submerged.png"
+import img_woodbug_submerged_2 from "../../res/woodbug_submerged_2.png"
+
 import { useLevel } from "../hooks/UseLevel";
 import { posToTranslate, wait } from "../Util";
-import { Direction, directionFromOffset, offsetFromDirection, rotateDirection } from "../Direction";
-
-import img_woodbug from "../../res/woodbug.png"
-import img_woodbug_closed from "../../res/woodbug_closed.png"
-
-const ID = "Woodbug";
-
+import { Tile } from "../Tile";
+import { useAnimFrame } from "../hooks/UseAnimFrame";
+import useStore from "../hooks/UseStore";
+import { useUniqueCounter } from "../hooks/UseUniqueCounter";
 
 interface Props {
 	pos: Vector2;
-	agro?: boolean;
-	direction: Direction | null;
 }
 
+const ID = "Woodbug";
+
+const TILES_BEFORE_SUBMERGE = 1;
 
 export function Woodbug(props: Props) {
+	const dirCounter = useUniqueCounter("direction");
+	const frame = useAnimFrame(ID);
 	const level = useLevel();
-	const ent = useEntity<{ direction: Direction | null }>(() => ({
+	const hiding = useStore<boolean>(false);
+	const ent = useEntity<{
+		submerged: boolean,
+		waterTimer: number,
+		isLeft: boolean
+	}>(() => ({
 		name: ID,
-		data: { 
-			direction: props.direction 
+		data: {
+			submerged: false,
+			waterTimer: 0,
+			isLeft: dirCounter % 2 === 1
 		},
 		pos: props.pos,
-		canPush: () => false,
-		canCollide: () => true,
-		onCollide: async (_, other) => {
-			const posDiff = ent.data.pos.clone().sub(other.data.pos).normalize();
-			if (other.props.name === "Log" && directionFromOffset(posDiff.clone().negate()) === ent.data.direction) {
-				level.await(wait(200));
-				ent.bump(other.data.pos, 3);
-				other.setPos(ent.data.pos.clone());
-				wait(50).then(() => other.setDead(true));
+		canPush: (ent, other) =>
+			!level.testCollision(ent.data.pos.clone().add(ent.data.pos.clone().sub(other.data.pos)), ent).collides && 
+			other.props.name !== "Player" &&
+			!ent.data.submerged,
+		canCollide: (ent) => !ent.data.submerged,
+		onPush: async (_, other) => {
+			if (ent.data.submerged) return;
+			const posDiff = ent.data.pos.clone().sub(other.data.pos);
+			if (posDiff.x < 0) ent.setData({ isLeft: true });
+			if (posDiff.x > 0) ent.setData({ isLeft: false });
+			let dstPos = ent.data.pos.clone().add(posDiff);
+			const collides = level.testCollision(dstPos, ent);
+			if (collides.collides) {
+				collides.entity?.props.onCollide(collides.entity!, ent);
+				wait(40).then(() => ent.bump(dstPos));
 			}
 			else {
-				const otherPos = other.data.pos;
-				wait(50).then(() => ent.bump(otherPos, -1));
-				if (!ent.data.direction) ent.setData({ direction: directionFromOffset(posDiff) });
-				else if (ent.data.direction === directionFromOffset(posDiff.negate())) ent.setData({ direction: null });
+				hiding(true);
+				let dstPos = ent.data.pos.clone();
+				while (true) {
+					ent.data.pos = dstPos;
+					const testPos = dstPos.clone().add(posDiff);
+					const collision = level.testCollision(testPos, ent);
+					const push = level.testPush(testPos, ent);
+					if (push.canPush) {
+						const pushFromPos = dstPos;
+						setTimeout(() => {
+							const oldPos = ent.data.pos;
+							ent.data.pos = pushFromPos;
+							level.await(collision.entity?.props.onCollide(push.entity!, ent) ?? Promise.resolve());
+							level.await(push.entity?.props.onPush(push.entity!, ent) ?? Promise.resolve());
+							ent.data.pos = oldPos;
+						}, 30)
+						dstPos = testPos;
+						break;
+					}
+					else if (collision.collides) {
+						collision.entity?.props.onCollide(push.entity!, ent);
+						break;
+					}
+					if (level.getTile(ent.data.pos) === Tile.Water && level.getEntity(ent.data.pos, ent) === null) {
+						if (ent.data.waterTimer >= TILES_BEFORE_SUBMERGE) {
+							level.await(wait(300));
+							break;
+						}
+						else ent.setData({ waterTimer: ent.data.waterTimer + 1 });
+					}
+					dstPos = testPos;
+				}
+				ent.setPos(dstPos);
+				level.await(new Promise((res) => setTimeout(res, 90)));
+				setTimeout(() => hiding(false), 300);
+				await new Promise((res) => setTimeout(res, 80));
 			}
 		},
 		onStep: async () => {
-			if (ent.data.direction && props.agro) {
-				const testPos = ent.data.pos.clone().add(offsetFromDirection(ent.data.direction));
-				const collides = level.testCollision(testPos, ent);
-				if (collides.entity?.props.name === "Log") {
-					await wait(300);
-					level.await(wait(200));
-					ent.bump(collides.entity.data.pos, 3);
-					collides.entity.setPos(ent.data.pos.clone());
-					wait(50).then(() => collides.entity!.setDead(true));
-				}
+			if (level.getTile(ent.data.pos) === Tile.Water && level.getEntity(ent.data.pos, ent) === null) {
+				ent.setData({ submerged: true });
 			}
 		}
 	}))
 
 	return (
 		<div ref={ent.ref}
-			class="size-24 bg-cover absolute transition-[translate] duration-100 z-10"
+			class="size-24 bg-cover absolute transition-core duration-100 z-10"
 			style={{
-				backgroundImage: `url(${ent.data.direction === null ? img_woodbug_closed : img_woodbug})`,
+				backgroundImage: 
+					ent.data.submerged 
+					? (frame % 2 === 0) ? `url(${img_woodbug_submerged_2})` : `url(${img_woodbug_submerged})` 
+					: hiding()
+						? `url(${img_snail_hide})`
+						: (frame % 2 === 0) ? `url(${img_snail_2})` : `url(${img_snail})`,
 				translate: posToTranslate(ent.data.pos),
-				rotate: ent.data.direction ? `${rotateDirection(ent.data.direction)}deg` : '',
-				filter: props.agro ? `sepia(100%) saturate(300%) hue-rotate(-45deg)` : ''
+				scale: `${ent.data.isLeft ? "-1" : "1"} 1`
 			}}
 		>
 		</div>

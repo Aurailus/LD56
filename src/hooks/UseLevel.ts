@@ -12,6 +12,8 @@ export type LevelStateData = {
 	inputState: InputState;
 	tilemap: number[][]
 	entities: AnyEntity[]
+	numMoves: number
+	usedUndo: boolean
 }
 
 export type LevelState = {
@@ -26,6 +28,8 @@ export type LevelState = {
 	writeUndoStep(): void;
 	undo(): void;
 	complete(): void;
+	quit(): void;
+	restart(): void;
 };
 
 export const LevelStateContext = createContext<LevelState>({} as any);

@@ -1,23 +1,27 @@
 import { ComponentChildren, h } from "preact";
 import { useCallback, useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { Vector2 } from "three";
-import { PushResult, Entity, CollisionResult, AnyEntity } from "../hooks/UseEntity";
+import { PushResult, CollisionResult, AnyEntity } from "../hooks/UseEntity";
 import { InputState, LevelState, LevelStateContext, LevelStateData } from "../hooks/UseLevel";
 import { Tile } from "../Tile";
-import { dvorak } from "../Main";
-import { clone } from "../Util";
+import { clone, wait } from "../Util";
 import clsx from "clsx";
+import { NO_TILT } from "../Main";
+import { LevelComponentProps } from "../levels";
+import useStore from "../hooks/UseStore";
 
-const TILT_MAG = 0;
+let TILT_MAG = 0;
+requestAnimationFrame(() => { TILT_MAG = NO_TILT ? 0 : 0.3 });;
 
-interface Props {
+type Props = {
 	tilemap: number[][],
 	children: ComponentChildren;
-}
+} & LevelComponentProps;
 
 export function Level(props: Props) {
 	const [ integrity, setIntegrity ] = useState<number>(0);
 	const rerender = useCallback(() => setIntegrity(i => i + 1), []);
+	const isComplete = useStore<boolean>(false);
 
 	const history = useMemo<Record<string, any>[][]>(() => [], []);
 	useEffect(() => { history.push(data.entities.map(ent => clone(ent.data))) }, [])
@@ -25,17 +29,34 @@ export function Level(props: Props) {
 	const data = useMemo<LevelStateData>(() => ({ 
 		entities: [], 
 		inputState: InputState.Input,
-		tilemap: props.tilemap
+		tilemap: props.tilemap,
+		numMoves: 0,
+		usedUndo: false
 	}), []);
 
 	const writeUndoStep = useCallback(() => {
+		data.numMoves++;
 		history.push(data.entities.map(ent => clone(ent.data)));
 	}, []);
 
 	const undo = useCallback(() => {
+		data.usedUndo = true;
+		data.numMoves--;
 		const currHist = history.pop();
 		if (!currHist) return;
-		currHist.map((newData, ind) => data.entities[ind].setData(newData));
+		currHist.map((newData, ind) => data.entities[ind].setData(clone(newData)));
+		rerender();
+	}, []);
+
+	const restart = useCallback(() => {
+		const currHist = history.at(0);
+		console.log(currHist)
+		if (currHist) {
+			currHist.map((newData, ind) => data.entities[ind].setData(clone(newData)));
+			history.splice(1, currHist.length - 1);
+		}
+		data.numMoves = 0;
+		data.usedUndo = false;
 		rerender();
 	}, []);
 
@@ -108,8 +129,15 @@ export function Level(props: Props) {
 		return data.entities.find(ent => ent.data.pos.equals(pos) && ent.data !== ignore?.data) ?? null;
 	}, []);
 
-	const complete = useCallback(() => {
+	const quit = useCallback(() => {
+		awaitFn(new Promise(() => {}));
+		props.onQuit();
+	}, []);
 
+	const complete = useCallback(() => {
+		awaitFn(new Promise(() => {}));
+		isComplete(true);
+		wait(1000).then(() => props.onComplete(data.numMoves, data.usedUndo));
 	}, []);
 
 	const levelState = useMemo<LevelState>(() => ({
@@ -122,7 +150,9 @@ export function Level(props: Props) {
 		step,
 		writeUndoStep,
 		undo,
-		complete
+		quit,
+		complete,
+		restart
 	}), []);
 
 	const diffedLevelState = useMemo(() => ({ ...levelState }), [ integrity ]);
@@ -144,7 +174,7 @@ export function Level(props: Props) {
 
 	return (
 		<LevelStateContext.Provider value={diffedLevelState}>
-			<div class={clsx("w-screen h-screen grid place-items-center [perspective:200px]")}>
+			<div class={clsx("w-screen h-screen grid place-items-center transition bg-transparent duration-200 [perspective:200px]", isComplete() && "scale-125 !bg-sky-600")}>
 				<div ref={screenRef} class="will-change-transform isolate relative grid [&>*]:[grid-area:a] rounded-xl 
 					overflow-hidden shadow-lg shadow-black/30 transition-all duration-300" style={{
 					gridTemplateAreas: "a",

@@ -27,7 +27,7 @@ export function Goal(props: Props) {
 		onCollide: async (_, other) => {
 			if (other.props.name === "Player") {
 				wait(40).then(() => ent.bump(other.data.pos, 1));
-				console.warn('player touched goal!');
+				level.complete();
 			}
 		}
 	}));

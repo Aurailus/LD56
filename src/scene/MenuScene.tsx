@@ -53,13 +53,17 @@ export function MenuScene(props: Props) {
 									scale: `80%`,
 								}}></div>}
 								<p class="font-handwritten text-sky-800 relative leading-none pb-1">{level.number}</p>
-								<div class={"transition-all " + (progress.completed ? "scale-1 opacity-100" : "scale-0 opacity-0")}>
+								<div class={"transition-all " + (unlocked ? "scale-1 opacity-100" : "scale-0 opacity-0")}>
 									<div class="bg-cover absolute -translate-x-1/2 top-full -left-0.5 mt-1 aspect-square"
+										title="Level Completed"
 										style={{ backgroundImage: `url(${progress.completed ? img_star : img_star_outline})`, width: `16px` }}/>
 									<div class="bg-cover absolute -translate-x-1/2 top-full left-1/2 mt-1 aspect-square"
-										style={{ backgroundImage: `url(${progress.noUndo ? img_star : img_star_outline})`, width: `16px` }}/>
+										style={{ backgroundImage: `url(${progress.noUndo ? img_star : img_star_outline})`, width: `16px` }}
+											title="No Undo-s"
+										/>
 									<div class="bg-cover absolute translate-x-1/2 top-full -right-0.5 mt-1 aspect-square"
-										style={{ backgroundImage: `url(${progress.minMoves ? img_star : img_star_outline})`, width: `16px` }}/>
+										style={{ backgroundImage: `url(${progress.minMoves ? img_star : img_star_outline})`, width: `16px` }}
+										title="Minimum Moves"/>
 								</div>
 							</button>
 						);

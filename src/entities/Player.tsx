@@ -4,7 +4,7 @@ import { Vector2 } from "three";
 import { useEffect } from "preact/hooks";
 import { InputState, useLevel } from "../hooks/UseLevel";
 import { posToTranslate, wait } from "../Util";
-import { dvorak } from "../Main";
+import { IS_DEBUG, IS_DVORAK } from "../Main";
 import { Direction } from "../Direction";
 import { directionFromOffset, rotateDirection } from "../Direction";
 
@@ -14,6 +14,7 @@ import { pulseFrame, useAnimFrame } from "../hooks/UseAnimFrame";
 
 interface Props {
 	pos: Vector2;
+	direction: Direction;
 }
 
 export function Player(props: Props) {
@@ -22,7 +23,7 @@ export function Player(props: Props) {
 	const ent = useEntity<{ direction: Direction }>(() => ({
 		name: "Player",
 		data: {
-			direction: Direction.Up,
+			direction: props.direction,
 		},
 		pos: props.pos,
 		canPush: (ent, other) => 
@@ -48,20 +49,20 @@ export function Player(props: Props) {
 			const newPos = ent.data.pos.clone();
 			
 			if (!e.repeat) {
-				if ((e.key === "w" && !dvorak) || (e.key === "," && dvorak) || (e.key === "ArrowUp"))
+				if ((e.key === "w" && !IS_DVORAK) || (e.key === "," && IS_DVORAK) || (e.key === "ArrowUp"))
 					newPos.add(new Vector2(0, -1));
-				else if ((e.key === "a" && !dvorak) || (e.key === "a" && dvorak) || (e.key === "ArrowLeft"))
+				else if ((e.key === "a" && !IS_DVORAK) || (e.key === "a" && IS_DVORAK) || (e.key === "ArrowLeft"))
 					newPos.add(new Vector2(-1, 0));
-				else if ((e.key === "s" && !dvorak) || (e.key === "o" && dvorak) || (e.key === "ArrowDown"))
+				else if ((e.key === "s" && !IS_DVORAK) || (e.key === "o" && IS_DVORAK) || (e.key === "ArrowDown"))
 					newPos.add(new Vector2(0, 1));
-				else if ((e.key === "d" && !dvorak) || (e.key === "e" && dvorak) || (e.key === "ArrowRight"))
+				else if ((e.key === "d" && !IS_DVORAK) || (e.key === "e" && IS_DVORAK) || (e.key === "ArrowRight"))
 					newPos.add(new Vector2(1, 0));
 			}
 
 			if (level.data.inputState === InputState.Input) {
 				if (newPos.clone().sub(ent.data.pos).lengthSq() !== 0) {
 					level.writeUndoStep();
-					ent.setData({ direction: directionFromOffset(ent.data.pos.clone().sub(newPos))! });
+					ent.setData({ direction: directionFromOffset(newPos.clone().sub(ent.data.pos))! });
 					// pulseFrame();
 					level.data.inputState = InputState.Waiting;
 					const collision = level.testCollision(newPos, ent)
@@ -76,11 +77,22 @@ export function Player(props: Props) {
 				}
 				else if (e.key === " ") {
 					level.writeUndoStep();
+					const upPos = ent.data.pos.clone().add(new Vector2(0, -1));
+					ent.bump(upPos);
 					level.step();
 				}
-				else if (e.key === "z" || (dvorak && e.key === ";")) {
+				else if (e.key === "z" || (IS_DVORAK && e.key === ";")) {
 					level.undo();
 				}
+				else if (e.key === "Escape") {
+					level.quit();
+				}
+				else if (e.key === "r") {
+					level.restart();
+				}
+				else if (e.key === "Enter" && IS_DEBUG) {
+					level.complete();
+				} 
 			}
 		}
 
@@ -95,7 +107,7 @@ export function Player(props: Props) {
 			style={{
 				backgroundImage: (frame % 2) === 1 ? `url(${img_player_2})` : `url(${img_player})`,
 				translate: posToTranslate(ent.data.pos),
-				rotate: `${rotateDirection(ent.data.direction)}deg`
+				rotate: `${rotateDirection(ent.data.direction) + 180}deg`
 			}}
 		>
 		</div>
