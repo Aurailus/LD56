@@ -6,6 +6,9 @@ import { InputState, LevelState, LevelStateContext, LevelStateData } from "../ho
 import { Tile } from "../Tile";
 import { dvorak } from "../Main";
 import { clone } from "../Util";
+import clsx from "clsx";
+
+const TILT_MAG = 0;
 
 interface Props {
 	tilemap: number[][],
@@ -105,6 +108,10 @@ export function Level(props: Props) {
 		return data.entities.find(ent => ent.data.pos.equals(pos) && ent.data !== ignore?.data) ?? null;
 	}, []);
 
+	const complete = useCallback(() => {
+
+	}, []);
+
 	const levelState = useMemo<LevelState>(() => ({
 		data,
 		await: awaitFn,
@@ -114,20 +121,38 @@ export function Level(props: Props) {
 		getEntity,
 		step,
 		writeUndoStep,
-		undo
+		undo,
+		complete
 	}), []);
 
 	const diffedLevelState = useMemo(() => ({ ...levelState }), [ integrity ]);
 
+
+	const screenRef = useRef<HTMLDivElement>(null);
+	const setTilt = useCallback(() => {
+		const player = data.entities.find(e => e.props.name === "Player");
+		const xTilt = (((player?.data.pos.x ?? 0) / data.tilemap[0].length * 2) - 1) * TILT_MAG;
+		const yTilt = (((player?.data.pos.y ?? 0) / data.tilemap.length * 2) - 1) * TILT_MAG;
+		screenRef.current!.style.transform = `rotateY(${-xTilt}deg) rotateX(${yTilt}deg)`;
+	}, []);
+
+	useEffect(() => {
+		window.addEventListener('keydown', setTilt);
+		setTilt();
+		return () => window.removeEventListener('keydown', setTilt);
+	}, [])
+
 	return (
 		<LevelStateContext.Provider value={diffedLevelState}>
-			<div class="relative grid [&>*]:[grid-area:a]" style={{
-				gridTemplateAreas: "a",
-				width: 32 * data.tilemap[0].length, 
-				height: 32 * data.tilemap.length,
-				transform: `scale(3)`,
-			}}>
-				{props.children}
+			<div class={clsx("w-screen h-screen grid place-items-center [perspective:200px]")}>
+				<div ref={screenRef} class="will-change-transform isolate relative grid [&>*]:[grid-area:a] rounded-xl 
+					overflow-hidden shadow-lg shadow-black/30 transition-all duration-300" style={{
+					gridTemplateAreas: "a",
+					width: 32 * data.tilemap[0].length * 3, 
+					height: 32 * data.tilemap.length * 3,
+				}}>
+					{props.children}
+				</div>
 			</div>
 		</LevelStateContext.Provider>
 	);

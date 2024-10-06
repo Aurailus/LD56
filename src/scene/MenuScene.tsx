@@ -1,0 +1,71 @@
+import { h } from 'preact';
+
+import { LEVELS } from '../levels';
+
+import img_level_icon from "../../res/level_icon.png"
+import img_star_outline from "../../res/level_star_outline.png"
+import img_star from "../../res/level_star.png"
+import { LevelProgress } from '../LevelProgress';
+import clsx from 'clsx';
+import useStore from '../hooks/UseStore';
+import { useCallback, useEffect } from 'preact/hooks';
+import { wait } from '../Util';
+
+interface Props {
+	getLevelProgress: (number: number) => LevelProgress;
+	startLevel: (number: number) => void;
+}
+
+export function MenuScene(props: Props) {
+	const opacity = useStore(0);
+	useEffect(() => void requestAnimationFrame(() => opacity(1)), []);
+
+	const startLevel = useCallback((level: number) => {
+		opacity(0);
+		wait(50).then(() => props.startLevel(level));
+	}, []);
+
+	return (
+		<div class={clsx("w-screen h-screen grid place-items-center transition-all duration-200", 
+			opacity() ? "opacity-100" : "opacity-0")}>
+			<div class="grid w-screen h-screen overflow-auto items-center justify-center">
+				<div class="flex w-auto gap-64 px-64 overflow-auto h-screen items-center">
+					{LEVELS.map(level => {
+						const progress = props.getLevelProgress(level.number);
+						const unlocked = props.getLevelProgress(level.number - 1).completed || level.number === 0;
+						const isCurrent = unlocked && !props.getLevelProgress(level.number + 1).completed && !progress.completed;
+						return (
+							<button
+								disabled={!unlocked}
+								onClick={() => startLevel(level.number)}
+								class={clsx(
+									"aspect-square bg-cover grid place-items-center isolate relative shrink-0 outline-none",
+									!unlocked && "opacity-30")}
+								style={{ width: `24px`, scale: `300%` }}
+							>
+								<div class="absolute z-0 inset-0" style={{ 
+									backgroundImage: `url(${img_level_icon})`,
+									rotate: `${(level.number % 4) * 90}deg`
+								}}></div>
+								{isCurrent && <div class="absolute z-0 inset-0 animate-ping" style={{ 
+									backgroundImage: `url(${img_level_icon})`,
+									rotate: `${(level.number % 4) * 90}deg`,
+									scale: `80%`,
+								}}></div>}
+								<p class="font-handwritten text-sky-800 relative leading-none pb-1">{level.number}</p>
+								<div class={"transition-all " + (progress.completed ? "scale-1 opacity-100" : "scale-0 opacity-0")}>
+									<div class="bg-cover absolute -translate-x-1/2 top-full -left-0.5 mt-1 aspect-square"
+										style={{ backgroundImage: `url(${progress.completed ? img_star : img_star_outline})`, width: `16px` }}/>
+									<div class="bg-cover absolute -translate-x-1/2 top-full left-1/2 mt-1 aspect-square"
+										style={{ backgroundImage: `url(${progress.noUndo ? img_star : img_star_outline})`, width: `16px` }}/>
+									<div class="bg-cover absolute translate-x-1/2 top-full -right-0.5 mt-1 aspect-square"
+										style={{ backgroundImage: `url(${progress.minMoves ? img_star : img_star_outline})`, width: `16px` }}/>
+								</div>
+							</button>
+						);
+					})}
+				</div>
+			</div>
+		</div>
+	)
+}

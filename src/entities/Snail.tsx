@@ -3,12 +3,16 @@ import { Vector2 } from "three";
 import { useEntity } from "../hooks/UseEntity";
 
 import img_snail from "../../res/snail.png"
+import img_snail_2 from "../../res/snail_2.png"
 import img_snail_submerged from "../../res/snail_submerged.png"
 import img_snail_hide from "../../res/snail_hide.png"
+import img_snail_hide_2 from "../../res/snail_hide_2.png"
 
 import { useLevel } from "../hooks/UseLevel";
 import { posToTranslate, wait } from "../Util";
 import { Tile } from "../Tile";
+import { useAnimFrame } from "../hooks/UseAnimFrame";
+import useStore from "../hooks/UseStore";
 
 interface Props {
 	pos: Vector2;
@@ -19,7 +23,9 @@ const ID = "Snail";
 const TILES_BEFORE_SUBMERGE = 1;
 
 export function Snail(props: Props) {
+	const frame = useAnimFrame(ID);
 	const level = useLevel();
+	const hiding = useStore<boolean>(false);
 	const ent = useEntity<{
 		submerged: boolean,
 		waterTimer: number
@@ -45,7 +51,7 @@ export function Snail(props: Props) {
 				wait(40).then(() => ent.bump(dstPos));
 			}
 			else {
-				ent.ref.current!.style.background = `url(${img_snail_hide})`;
+				hiding(true);
 				let dstPos = ent.data.pos.clone();
 				while (true) {
 					ent.data.pos = dstPos;
@@ -79,9 +85,7 @@ export function Snail(props: Props) {
 				}
 				ent.setPos(dstPos);
 				level.await(new Promise((res) => setTimeout(res, 90)));
-				setTimeout(() => {
-					if (!ent.data.submerged) ent.ref.current!.style.background = `url(${img_snail})`
-				}, 300);
+				setTimeout(() => hiding(false), 300);
 				await new Promise((res) => setTimeout(res, 80));
 			}
 		},
@@ -94,9 +98,14 @@ export function Snail(props: Props) {
 
 	return (
 		<div ref={ent.ref}
-			class="size-8 bg-cover absolute transition-[translate] duration-100 z-10"
+			class="size-24 bg-cover absolute transition-core duration-100 z-10"
 			style={{
-				background: ent.data.submerged ? `url(${img_snail_submerged})` : `url(${img_snail})`,
+				backgroundImage: 
+					ent.data.submerged 
+					? `url(${img_snail_submerged})` 
+					: hiding()
+						? (frame % 2 === 0) ? `url(${img_snail_hide_2})` : `url(${img_snail_hide})`
+						: (frame % 2 === 0) ? `url(${img_snail_2})` : `url(${img_snail})`,
 				translate: posToTranslate(ent.data.pos)
 			}}
 		>

@@ -2,14 +2,16 @@ import { h } from "preact"
 import { Level } from "../components/Level"
 import { range } from "../Util"
 import { Background } from "../components/Background"
-import { Player } from "../components/Player"
-import { Snail } from "../components/Snail"
-import { Log } from "../components/Log"
+import { Player } from "../entities/Player"
+import { Snail } from "../entities/Snail"
+import { Log } from "../entities/Log"
 import { Vector2 } from "three"
-import { Woodbug } from "../components/Woodbug"
+import { Woodbug } from "../entities/Woodbug"
 
 import img_level_0 from '../../res/level_0.png';
 import { loadLevelTiles } from "../Tile"
+import { Goal } from "../entities/Goal"
+import { Direction } from "../Direction"
 
 export function Level0() {
 	return (
@@ -46,6 +48,7 @@ export function Level0() {
 			></Inchworm> */}
 			{/* <Woodbug direction={null} pos={new Vector2(3, 4)}></Woodbug> */}
 			<Woodbug direction={null} pos={new Vector2(1, 4)} agro/>
+			<Goal pos={new Vector2(2, 4)} direction={Direction.Down}/>
 		</Level>
 	)
 }

@@ -50,10 +50,10 @@ export function Log(props: Props) {
 
 	return ent.data.dead ? null : (
 		<div ref={ent.ref}
-			class="size-8 bg-cover absolute transition-[translate] duration-100"
+			class="size-24 bg-cover absolute transition-[translate] duration-100"
 			style={{
 				zIndex: ent.data.submerged ? 0 : 10,
-				background: ent.data.submerged ? `url(${img_log_submerged})` : `url(${img_log})`,
+				backgroundImage: ent.data.submerged ? `url(${img_log_submerged})` : `url(${img_log})`,
 				translate: posToTranslate(ent.data.pos)
 			}}
 		/>

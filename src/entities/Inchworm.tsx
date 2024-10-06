@@ -215,9 +215,9 @@ export function Inchworm(props: Props) {
 				const [ img, flip ] = getRotatedMidSegment(PATH_IMAGES, props.path, ind);
 				return (
 					<div
-						class="size-8 bg-cover absolute transition-[translate] duration-100 z-0"
+						class="size-24 bg-cover absolute transition-[translate] duration-100 z-0"
 						style={{
-							background: `url(${img})`,
+							backgroundImage: `url(${img})`,
 							translate: posToTranslate(pos),
 							transform: `scaleX(${flip ? -1 : 1})`
 						}}
@@ -235,10 +235,9 @@ export function Inchworm(props: Props) {
 				return (
 					<div 
 						ref={entities[indRaw].ref}
-						class="size-8 bg-cover absolute transition-[translate] duration-100 z-0"
+						class="size-24 bg-cover absolute transition-[translate] duration-100 z-0"
 						style={{
-							backgroundColor: ent === entities[0] ? "red" : "transparent",
-							background: `url(${img})`,
+							backgroundImage: `url(${img})`,
 							translate: posToTranslate(pos),
 							transform: `scaleX(${flip ? -1 : 1})`
 						}}

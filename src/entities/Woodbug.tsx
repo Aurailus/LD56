@@ -3,18 +3,13 @@ import { Vector2 } from "three";
 import { useEntity } from "../hooks/UseEntity";
 import { useLevel } from "../hooks/UseLevel";
 import { posToTranslate, wait } from "../Util";
+import { Direction, directionFromOffset, offsetFromDirection, rotateDirection } from "../Direction";
 
 import img_woodbug from "../../res/woodbug.png"
 import img_woodbug_closed from "../../res/woodbug_closed.png"
 
 const ID = "Woodbug";
 
-export enum Direction {
-	Up = 1,
-	Down,
-	Left,
-	Right
-}
 
 interface Props {
 	pos: Vector2;
@@ -22,30 +17,6 @@ interface Props {
 	direction: Direction | null;
 }
 
-const rotateDirection = (dir: Direction) => {
-	switch (dir) {
-		case Direction.Up: return 180;
-		case Direction.Down: return 0;
-		case Direction.Right: return 270;
-		case Direction.Left: return 90;
-	}
-}
-
-const directionFromOffset = (offset: Vector2) => {
-	if (offset.x < 0) return Direction.Left;
-	else if (offset.x > 0) return Direction.Right;
-	else if (offset.y < 0) return Direction.Up;
-	else if (offset.y > 0) return Direction.Down;
-	return null;
-}
-const offsetFromDirection = (dir: Direction) => {
-	switch (dir) {
-		case Direction.Up: return new Vector2(0, -1);
-		case Direction.Down: return new Vector2(0, 1);
-		case Direction.Right: return new Vector2(1, 0);
-		case Direction.Left: return new Vector2(-1, 0);
-	}
-}
 
 export function Woodbug(props: Props) {
 	const level = useLevel();
@@ -89,9 +60,9 @@ export function Woodbug(props: Props) {
 
 	return (
 		<div ref={ent.ref}
-			class="size-8 bg-cover absolute transition-[translate] duration-100 z-10"
+			class="size-24 bg-cover absolute transition-[translate] duration-100 z-10"
 			style={{
-				background: `url(${ent.data.direction === null ? img_woodbug_closed : img_woodbug})`,
+				backgroundImage: `url(${ent.data.direction === null ? img_woodbug_closed : img_woodbug})`,
 				translate: posToTranslate(ent.data.pos),
 				rotate: ent.data.direction ? `${rotateDirection(ent.data.direction)}deg` : '',
 				filter: props.agro ? `sepia(100%) saturate(300%) hue-rotate(-45deg)` : ''

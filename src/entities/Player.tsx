@@ -1,22 +1,29 @@
 import { h } from "preact"
 import { useEntity } from "../hooks/UseEntity"
 import { Vector2 } from "three";
-
-import img_player from "../../res/player.png";
 import { useEffect } from "preact/hooks";
 import { InputState, useLevel } from "../hooks/UseLevel";
 import { posToTranslate, wait } from "../Util";
 import { dvorak } from "../Main";
+import { Direction } from "../Direction";
+import { directionFromOffset, rotateDirection } from "../Direction";
+
+import img_player from "../../res/player.png";
+import img_player_2 from "../../res/player_2.png";
+import { pulseFrame, useAnimFrame } from "../hooks/UseAnimFrame";
 
 interface Props {
 	pos: Vector2;
 }
 
 export function Player(props: Props) {
+	const frame = useAnimFrame();
 	const level = useLevel();
-	const ent = useEntity(() => ({
+	const ent = useEntity<{ direction: Direction }>(() => ({
 		name: "Player",
-		data: {},
+		data: {
+			direction: Direction.Up,
+		},
 		pos: props.pos,
 		canPush: (ent, other) => 
 			!level.testCollision(ent.data.pos.clone().add(ent.data.pos.clone().sub(other.data.pos)), ent).collides,
@@ -54,6 +61,8 @@ export function Player(props: Props) {
 			if (level.data.inputState === InputState.Input) {
 				if (newPos.clone().sub(ent.data.pos).lengthSq() !== 0) {
 					level.writeUndoStep();
+					ent.setData({ direction: directionFromOffset(ent.data.pos.clone().sub(newPos))! });
+					// pulseFrame();
 					level.data.inputState = InputState.Waiting;
 					const collision = level.testCollision(newPos, ent)
 					const push = level.testPush(newPos, ent)
@@ -82,10 +91,11 @@ export function Player(props: Props) {
 	return (
 		<div 
 			ref={ent.ref}
-			class="size-8 bg-cover absolute transition-all duration-100 z-50"
+			class="size-24 bg-cover absolute transition-core duration-100 z-50"
 			style={{
-				background: `url(${img_player})`,
-				translate: posToTranslate(ent.data.pos)
+				backgroundImage: (frame % 2) === 1 ? `url(${img_player_2})` : `url(${img_player})`,
+				translate: posToTranslate(ent.data.pos),
+				rotate: `${rotateDirection(ent.data.direction)}deg`
 			}}
 		>
 		</div>

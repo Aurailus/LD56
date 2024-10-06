@@ -13,15 +13,16 @@ export function classes(...classes: any) {
 	return classes.filter(Boolean).join(' ');
 }
 
-const TILE_SIZE = 32;
+export const TILE_SIZE = 32;
+export const SCALE = 3;
 
 export function posToTranslate(pos: Vector2) {
-	return `${pos.x * TILE_SIZE}px ${pos.y * TILE_SIZE}px`
+	return `${pos.x * TILE_SIZE * SCALE}px ${pos.y * TILE_SIZE * SCALE}px`
 }
 
 export function translateToPos(pos: string) {
 	const segments = pos.split(" ").map(s => s.trim());
-	return new Vector2(Number.parseFloat(segments[0]) / TILE_SIZE, Number.parseFloat(segments[1]) / TILE_SIZE);
+	return new Vector2(Number.parseFloat(segments[0]) / TILE_SIZE / SCALE, Number.parseFloat(segments[1]) / TILE_SIZE / SCALE);
 }
 
 export function wait(ms: number) {

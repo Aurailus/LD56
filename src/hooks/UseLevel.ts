@@ -25,6 +25,7 @@ export type LevelState = {
 	await(res: Promise<void>): Promise<void>;
 	writeUndoStep(): void;
 	undo(): void;
+	complete(): void;
 };
 
 export const LevelStateContext = createContext<LevelState>({} as any);

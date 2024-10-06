@@ -2,14 +2,16 @@ import { h } from "preact"
 import { Level } from "../components/Level"
 import { range } from "../Util"
 import { Background } from "../components/Background"
-import { Player } from "../components/Player"
-import { Log } from "../components/Log"
+import { Player } from "../entities/Player"
+import { Log } from "../entities/Log"
 import { Vector2 } from "three"
 
 import img_level_7 from '../../res/level_7.png';
-import { Snail } from "../components/Snail"
+import { Snail } from "../entities/Snail"
 import { loadLevelTiles } from "../Tile"
-import { Direction, Woodbug } from "../components/Woodbug"
+import { Woodbug } from "../entities/Woodbug"
+import { Goal } from "../entities/Goal"
+import { Direction } from "../Direction"
 
 export function Level7() {
 	return (
@@ -28,6 +30,7 @@ export function Level7() {
 		>
 			<Background image={img_level_7}/>
 			<Player pos={new Vector2(4, 7)}/>
+			<Goal pos={new Vector2(3, 1)} direction={Direction.Down}/>
 			<Log pos={new Vector2(7, 4)}/>
 			<Log pos={new Vector2(7, 5)}/>
 			<Log pos={new Vector2(9, 5)}/>
