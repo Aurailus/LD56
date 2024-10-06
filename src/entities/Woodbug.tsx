@@ -15,6 +15,9 @@ import { useAnimFrame } from "../hooks/UseAnimFrame";
 import useStore from "../hooks/UseStore";
 import { useUniqueCounter } from "../hooks/UseUniqueCounter";
 import clsx from "clsx";
+import { Howl } from "howler";
+import sfx_roll from "../../sfx/roll.wav"
+import sfx_splash from "../../sfx/splash.wav"
 
 interface Props {
 	pos: Vector2;
@@ -45,7 +48,12 @@ export function Woodbug(props: Props) {
 			!level.testCollision(ent.data.pos.clone().add(ent.data.pos.clone().sub(other.data.pos)), ent).collides && 
 			other.props.name !== "Player" &&
 			!ent.data.submerged,
-		canCollide: (ent) => !ent.data.submerged,
+		canCollide: (ent, other) => {
+			if (ent.data.submerged && other.props.name === "Player") {
+				new Howl({ src: sfx_splash, html5: true, rate: Math.random() * 0.3 + 1.8, volume: 0.3 }).play();
+			}
+			return !ent.data.submerged
+		},
 		onPush: async (_, other) => {
 			if (ent.data.submerged) return;
 			const posDiff = ent.data.pos.clone().sub(other.data.pos);
@@ -91,14 +99,16 @@ export function Woodbug(props: Props) {
 					dstPos = testPos;
 				}
 				ent.setPos(dstPos);
+				new Howl({ src: sfx_roll, html5: true, rate: Math.random() * 0.2 + 0.65, volume: 0.4 }).play();
 				level.await(new Promise((res) => setTimeout(res, 90)));
 				setTimeout(() => hiding(false), 300);
 				await new Promise((res) => setTimeout(res, 80));
 			}
 		},
 		onStep: async () => {
-			if (level.getTile(ent.data.pos) === Tile.Water && level.getEntity(ent.data.pos, ent) === null) {
+			if (!ent.data.submerged && level.getTile(ent.data.pos) === Tile.Water && level.getEntity(ent.data.pos, ent) === null) {
 				ent.setData({ submerged: true });
+				new Howl({ src: sfx_splash, html5: true, rate: Math.random() * 0.3 + 0.85, volume: 0.6 }).play();
 			}
 		}
 	}))

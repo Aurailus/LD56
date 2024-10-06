@@ -39,11 +39,11 @@ export default function LevelScene(props: Props) {
 	return (
 		<div key={renderedLevel()} class={clsx("w-screen h-screen grid place-items-center transition-all duration-200",
 			opacity() ? "opacity-100 scale-100" : "opacity-0 scale-[75%]")}>
-			<p class="absolute top-4 left-1/2 -translate-x-1/2 text-nowrap text-white font-handwritten text-5xl [text-shadow:0px_4px_12px_rgb(0_0_0/50%)]">
+			<p class="absolute top-4 left-1/2 -translate-x-1/2 text-nowrap text-white font-handwritten text-5xl [text-shadow:0px_4px_12px_rgb(0_0_0/50%)] z-50 pointer-events-none">
 				{level.name.split("").map((x, i) => <span key={i} class={clsx("inline-block animate-text-bob", x === " " && "opacity-0")} style={{ "--i": i.toString() }}>{x === " " ? "." : x}</span>)}
 			</p>
 
-			<p class="absolute bottom-4 left-1/2 -translate-x-1/2 text-nowrap text-emerald-300/40 font-handwritten text-3xl [text-shadow:0px_4px_12px_rgb(0_0_0/20%)]">
+			<p class="absolute bottom-4 left-1/2 -translate-x-1/2 text-nowrap text-emerald-300/40 font-handwritten text-3xl z-50 [text-shadow:0px_4px_12px_rgb(0_0_0/20%)] pointer-events-nonei">
 				{"[Esc] Quit to Menu        [R] Restart        [Z] Undo".split("").map((x, i) => <span key={i} class={clsx("inline-block animate-text-bob", x === " " && "opacity-0")} style={{ "--i": i.toString() }}>{x === " " ? "." : x}</span>)}
 			</p>
 

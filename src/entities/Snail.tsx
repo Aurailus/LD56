@@ -17,6 +17,10 @@ import { useUniqueCounter } from "../hooks/UseUniqueCounter";
 import useStore from "../hooks/UseStore";
 import { useRef } from "preact/hooks";
 import clsx from "clsx";
+import { Howl } from "howler"
+
+import sfx_push from "../../sfx/push.wav"
+import sfx_splash from "../../sfx/splash.wav"
 
 interface Props {
 	pos: Vector2;
@@ -40,7 +44,12 @@ export function Snail(props: Props) {
 		canPush: (ent, other) =>
 			!level.testCollision(ent.data.pos.clone().add(ent.data.pos.clone().sub(other.data.pos)), ent).collides &&
 			!ent.data.submerged,
-		canCollide: (ent) => !ent.data.submerged,
+		canCollide: (ent, other) => {
+			if (ent.data.submerged && other.props.name === "Player") {
+				new Howl({ src: sfx_splash, html5: true, rate: Math.random() * 0.3 + 1.8, volume: 0.3 }).play();
+			}
+			return !ent.data.submerged
+		},
 		onPush: async (_, other) => {
 			if (ent.data.submerged) return;
 			const posDiff = ent.data.pos.clone().sub(other.data.pos);
@@ -57,12 +66,14 @@ export function Snail(props: Props) {
 			}
 			else {
 				ent.setPos(dstPos);
+				new Howl({ src: sfx_push, html5: true, rate: Math.random() * 0.5 + 0.75, volume: 0.6 }).play();
 				level.await(new Promise((res) => setTimeout(res, 90)));
 			}
 		},
 		onStep: async () => {
-			if (level.getTile(ent.data.pos) === Tile.Water && level.getEntity(ent.data.pos, ent) === null) {
+			if (!ent.data.submerged && level.getTile(ent.data.pos) === Tile.Water && level.getEntity(ent.data.pos, ent) === null) {
 				ent.setData({ submerged: true });
+				new Howl({ src: sfx_splash, html5: true, rate: Math.random() * 0.3 + 0.85, volume: 0.6 }).play();
 			}
 		}
 	}))

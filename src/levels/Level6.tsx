@@ -11,6 +11,7 @@ import { loadLevelTiles } from "../Tile"
 import { Goal } from "../entities/Goal"
 import { Direction } from "../Direction"
 import { LevelComponentProps } from "."
+import { Frog } from "../entities/Frog"
 
 export function Level6(props: LevelComponentProps) {
 	return (
@@ -30,6 +31,7 @@ export function Level6(props: LevelComponentProps) {
 		>
 			<Background image={img_level_6}/>
 			<Player pos={new Vector2(3, 6)} direction={Direction.Up}/>
+			<Frog pos={new Vector2(6, 1)} direction={Direction.Down} agro/>
 			<Goal pos={new Vector2(10, 4)} direction={Direction.Left}/>
 			<Snail pos={new Vector2(6, 4)}/>
 			<Woodbug pos={new Vector2(3, 4)}/>

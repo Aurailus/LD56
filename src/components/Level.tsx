@@ -9,6 +9,12 @@ import clsx from "clsx";
 import { NO_TILT } from "../Main";
 import { LevelComponentProps } from "../levels";
 import useStore from "../hooks/UseStore";
+import { Howl } from "howler";
+import sfx_yippee from "../../sfx/yippee.wav";
+import sfx_level_win from "../../sfx/level_win.wav";
+import sfx_move from "../../sfx/move.wav"
+import sfx_bump from "../../sfx/bump.wav"
+import sfx_level_enter from "../../sfx/level_enter.wav"
 
 let TILT_MAG = 0;
 requestAnimationFrame(() => { TILT_MAG = NO_TILT ? 0 : 0.3 });;
@@ -24,7 +30,10 @@ export function Level(props: Props) {
 	const isComplete = useStore<boolean>(false);
 
 	const history = useMemo<Record<string, any>[][]>(() => [], []);
-	useEffect(() => { history.push(data.entities.map(ent => clone(ent.data))) }, [])
+	useEffect(() => { 
+		history.push(data.entities.map(ent => clone(ent.data))) 
+		new Howl({ src: sfx_level_enter, html5: true, rate: Math.random() * 0.2 + 1, volume: 0.6 }).play();
+	}, [])
 
 	const data = useMemo<LevelStateData>(() => ({ 
 		entities: [], 
@@ -43,15 +52,21 @@ export function Level(props: Props) {
 		data.usedUndo = true;
 		data.numMoves--;
 		const currHist = history.pop();
-		if (!currHist) return;
+
+		if (!currHist) {
+			new Howl({ src: sfx_bump, html5: true, rate: Math.random() * 0.3 + 0.3, volume: 0.6 }).play();
+			return
+		};
+		new Howl({ src: sfx_move, html5: true, rate: Math.random() * 0.3 + 0.3, volume: 0.6 }).play();
+
 		currHist.map((newData, ind) => data.entities[ind].setData(clone(newData)));
 		rerender();
 	}, []);
 
 	const restart = useCallback(() => {
 		const currHist = history.at(0);
-		console.log(currHist)
 		if (currHist) {
+			new Howl({ src: sfx_level_enter, html5: true, rate: Math.random() * 0.2 + 1, volume: 0.6 }).play();
 			currHist.map((newData, ind) => data.entities[ind].setData(clone(newData)));
 			history.splice(1, history.length - 1);
 		}
@@ -136,6 +151,9 @@ export function Level(props: Props) {
 
 	const complete = useCallback(() => {
 		awaitFn(new Promise(() => {}));
+		new Howl({ src: sfx_yippee, html5: true, rate: 1.4, volume: 0.7 }).play();
+		wait(400).then(() => new Howl({ src: sfx_level_win, html5: true, rate: 0.7, volume: 0.3 }).play());
+				
 		wait(150).then(() => isComplete(true));
 		wait(1200).then(() => props.onComplete(data.numMoves, data.usedUndo));
 	}, []);

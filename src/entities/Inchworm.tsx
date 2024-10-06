@@ -32,6 +32,10 @@ import img_butt_s_2 from "../../res/inchworm_butt_s_2.png"
 import { useAnimFrame } from "../hooks/UseAnimFrame";
 import clsx from "clsx";
 
+import { Howl } from "howler";
+import sfx_move from "../../sfx/move.wav"
+import sfx_bump from "../../sfx/bump.wav"
+
 type MidSegmentImages = {
 	n: string;
 	e: string;
@@ -176,6 +180,7 @@ export function Inchworm(props: Props) {
 			ent.setData({ length: ent.data.length - 1 });
 			level.await(wait(110));
 			await wait(100);
+			new Howl({ src: sfx_move, html5: true, rate: Math.random() * 0.5 + 0.75, volume: 0.6 }).play();
 		}
 		entities.slice(0, entities.length - 2).forEach(ent => ent.setPos(new Vector2(-100, -100)));
 		level.await(wait(200));
@@ -198,9 +203,11 @@ export function Inchworm(props: Props) {
 					head: (ent.data.head + 1) % props.path.length,
 				});
 				level.await(wait(110));
+				new Howl({ src: sfx_move, html5: true, rate: Math.random() * 0.5 + 0.75, volume: 0.6 }).play();
 				await wait(100);
 			}
 			else {
+				new Howl({ src: sfx_bump, html5: true, rate: Math.random() * 0.5 + 0.75, volume: 0.6 }).play();
 				wait(150)
 				.then(() => Promise.all(entities.map((ent) => ent?.bump(nextPos))))
 				.then(() => entities.forEach((seg, indRaw) => {

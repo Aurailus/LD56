@@ -12,6 +12,10 @@ import img_player from "../../res/player.png";
 import img_player_2 from "../../res/player_2.png";
 import { pulseFrame, useAnimFrame } from "../hooks/UseAnimFrame";
 import clsx from "clsx";
+import { Howl } from "howler";
+
+import sfx_move from "../../sfx/move.wav"
+import sfx_bump from "../../sfx/bump.wav"
 
 interface Props {
 	pos: Vector2;
@@ -72,12 +76,20 @@ export function Player(props: Props) {
 					const promises: Promise<void>[] = [];
 					if (collision.collides) promises.push(collision.entity?.props.onCollide(collision.entity!, ent) ?? Promise.resolve());
 					promises.push(collision.entity?.props.onPush(collision.entity!, ent) ?? Promise.resolve());
-					if (push.canPush || !collision.collides) ent.setPos(newPos);
+					if (push.canPush || !collision.collides) {
+						ent.setPos(newPos);
+						new Howl({ src: sfx_move, html5: true, rate: Math.random() * 0.5 + 2, volume: 0.6 }).play();
+					}
+					else {
+						new Howl({ src: sfx_bump, html5: true, rate: Math.random() * 0.3 + 0.3, volume: 0.6 }).play();
+					}
 					await Promise.all(promises);
 					level.step();
+
 				}
 				else if (e.key === " ") {
 					level.writeUndoStep();
+					new Howl({ src: sfx_bump, html5: true, rate: Math.random() * 0.4 + 0.8, volume: 0.7 }).play();
 					const upPos = ent.data.pos.clone().add(new Vector2(0, -1));
 					ent.bump(upPos);
 					level.step();

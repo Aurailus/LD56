@@ -16,3 +16,14 @@
 [x] Preload the images (so that things don't flicker as much)
 
 [ ] Waterskeeter (ice physics transport on water)
+
+# SFX
+
+[x] Water Splash
+[x] Win Sound
+[x] Frog Wake Up
+[x] Frog Eat
+[x] Push Object
+[x] Roll object
+[x] Move
+[x] Bump (fail to move)
