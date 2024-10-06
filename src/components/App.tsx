@@ -45,13 +45,14 @@ export default function App() {
 
 	const onComplete = useCallback((numMoves: number, usedUndo: boolean) => {
 		const minMoves = LEVELS[currLevel()].minMoves;
-		setLevelProgress(currLevel(), { completed: true, minMoves: numMoves <= minMoves, noUndo: !usedUndo });
+		const existingProgress = getLevelProgress(currLevel());
+		setLevelProgress(currLevel(), { completed: true, minMoves: (numMoves <= minMoves) || existingProgress.minMoves, noUndo: (!usedUndo) || existingProgress.noUndo });
 		scene(Scene.Menu);
 	}, [])
 
 	return (
 		<div class={clsx("w-screen h-screen grid transition-all duration-300 bg-sky-500", 
-			scene() === Scene.Level && "!bg-slate-800", NO_MOTION && "no-motion")}>
+			scene() === Scene.Level && "!bg-emerald-950", NO_MOTION && "no-motion")}>
 			{scene() === Scene.Menu 
 				? <MenuScene getLevelProgress={getLevelProgress} startLevel={startLevel}/> 
 				: <LevelScene level={currLevel()} onQuit={onQuit} onComplete={onComplete}/>}

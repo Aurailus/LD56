@@ -5,8 +5,12 @@ import { useLevel } from "../hooks/UseLevel";
 import { posToTranslate, wait } from "../Util";
 import { Direction, directionFromOffset, offsetFromDirection, rotateDirection } from "../Direction";
 
-import img_woodbug from "../../res/woodbug.png"
-import img_woodbug_closed from "../../res/woodbug_closed.png"
+import img_frog from "../../res/frog.png"
+import img_frog_2 from "../../res/frog_2.png"
+import img_frog_sleep from "../../res/frog_sleep.png"
+import img_frog_sleep_2 from "../../res/frog_sleep_2.png"
+import { useAnimFrame } from "../hooks/UseAnimFrame";
+import clsx from "clsx";
 
 const ID = "Frog";
 
@@ -19,6 +23,7 @@ interface Props {
 
 export function Frog(props: Props) {
 	const level = useLevel();
+	const frame = useAnimFrame("frog");
 	const ent = useEntity<{ direction: Direction | null }>(() => ({
 		name: ID,
 		data: { 
@@ -58,15 +63,32 @@ export function Frog(props: Props) {
 	}))
 
 	return (
-		<div ref={ent.ref}
-			class="size-24 bg-cover absolute transition-[translate] duration-100 z-10"
+		// <div ref={ent.ref}
+		// 	class="size-24 bg-cover absolute transition-[translate] duration-100 z-10"
+		// 	style={{
+		// 		backgroundImage: `url(${ent.data.direction === null ? img_frog_asleep : img_frog})`,
+		// 		translate: posToTranslate(ent.data.pos),
+		// 		rotate: ent.data.direction ? `${rotateDirection(ent.data.direction)}deg` : '',
+		// 	}}
+		// >
+		// </div>
+		<div 
+			ref={ent.ref}
+			class="size-24 absolute transition-core duration-100 z-10"
 			style={{
-				backgroundImage: `url(${ent.data.direction === null ? img_woodbug_closed : img_woodbug})`,
 				translate: posToTranslate(ent.data.pos),
 				rotate: ent.data.direction ? `${rotateDirection(ent.data.direction)}deg` : '',
-				filter: props.agro ? `sepia(100%) saturate(300%) hue-rotate(-45deg)` : ''
 			}}
 		>
+			<div class={clsx("w-full h-full inset-0 absolute bg-cover", (Math.floor(frame / 3) % 2 === 0 || ent.data.direction !== null) && "opacity-0")}
+				style={{ backgroundImage: `url(${img_frog_sleep})` }}/>
+			<div class={clsx("w-full h-full inset-0 absolute bg-cover", (Math.floor(frame / 3) % 2 === 1 || ent.data.direction !== null) && "opacity-0")}
+				style={{ backgroundImage: `url(${img_frog_sleep_2})` }}/>
+
+			<div class={clsx("w-full h-full inset-0 absolute bg-cover", (frame % 2 === 0 || ent.data.direction === null) && "opacity-0")}
+				style={{ backgroundImage: `url(${img_frog})` }}/>
+			<div class={clsx("w-full h-full inset-0 absolute bg-cover", (frame % 2 === 1 || ent.data.direction === null) && "opacity-0")}
+				style={{ backgroundImage: `url(${img_frog_2})` }}/>
 		</div>
 	)
 }

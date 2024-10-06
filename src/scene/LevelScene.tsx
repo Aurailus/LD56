@@ -43,7 +43,7 @@ export default function LevelScene(props: Props) {
 				{level.name.split("").map((x, i) => <span key={i} class={clsx("inline-block animate-text-bob", x === " " && "opacity-0")} style={{ "--i": i.toString() }}>{x === " " ? "." : x}</span>)}
 			</p>
 
-			<p class="absolute bottom-4 left-1/2 -translate-x-1/2 text-nowrap text-white/20 font-handwritten text-3xl [text-shadow:0px_4px_12px_rgb(0_0_0/20%)]">
+			<p class="absolute bottom-4 left-1/2 -translate-x-1/2 text-nowrap text-emerald-300/40 font-handwritten text-3xl [text-shadow:0px_4px_12px_rgb(0_0_0/20%)]">
 				{"[Esc] Quit to Menu        [R] Restart        [Z] Undo".split("").map((x, i) => <span key={i} class={clsx("inline-block animate-text-bob", x === " " && "opacity-0")} style={{ "--i": i.toString() }}>{x === " " ? "." : x}</span>)}
 			</p>
 

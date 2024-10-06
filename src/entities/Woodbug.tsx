@@ -14,6 +14,7 @@ import { Tile } from "../Tile";
 import { useAnimFrame } from "../hooks/UseAnimFrame";
 import useStore from "../hooks/UseStore";
 import { useUniqueCounter } from "../hooks/UseUniqueCounter";
+import clsx from "clsx";
 
 interface Props {
 	pos: Vector2;
@@ -103,19 +104,27 @@ export function Woodbug(props: Props) {
 	}))
 
 	return (
-		<div ref={ent.ref}
-			class="size-24 bg-cover absolute transition-core duration-100 z-10"
+		<div 
+			ref={ent.ref}
+			class="size-24 absolute transition-core duration-100"
 			style={{
-				backgroundImage: 
-					ent.data.submerged 
-					? (frame % 2 === 0) ? `url(${img_woodbug_submerged_2})` : `url(${img_woodbug_submerged})` 
-					: hiding()
-						? `url(${img_snail_hide})`
-						: (frame % 2 === 0) ? `url(${img_snail_2})` : `url(${img_snail})`,
+				zIndex: ent.data.submerged ? 0 : 10,
 				translate: posToTranslate(ent.data.pos),
 				scale: `${ent.data.isLeft ? "-1" : "1"} 1`
 			}}
 		>
+			<div class={clsx("w-full h-full inset-0 absolute bg-cover", (frame % 2 === 0 || !ent.data.submerged) && "opacity-0")}
+				style={{ backgroundImage: `url(${img_woodbug_submerged_2})` }}/>
+			<div class={clsx("w-full h-full inset-0 absolute bg-cover", (frame % 2 === 1 || !ent.data.submerged) && "opacity-0")}
+				style={{ backgroundImage: `url(${img_woodbug_submerged})` }}/>
+
+			<div class={clsx("w-full h-full inset-0 absolute bg-cover", (frame % 2 === 0 || ent.data.submerged || hiding()) && "opacity-0")}
+				style={{ backgroundImage: `url(${img_snail_2})` }}/>
+			<div class={clsx("w-full h-full inset-0 absolute bg-cover", (frame % 2 === 1 || ent.data.submerged || hiding()) && "opacity-0")}
+				style={{ backgroundImage: `url(${img_snail})` }}/>
+
+			<div class={clsx("w-full h-full inset-0 absolute bg-cover", (ent.data.submerged || !hiding()) && "opacity-0")}
+				style={{ backgroundImage: `url(${img_snail_hide})` }}/>
 		</div>
 	)
 }

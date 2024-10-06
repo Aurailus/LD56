@@ -19,6 +19,18 @@ import img_head_s from "../../res/inchworm_head_s.png"
 import img_butt_n from "../../res/inchworm_butt_n.png"
 import img_butt_e from "../../res/inchworm_butt_e.png"
 import img_butt_s from "../../res/inchworm_butt_s.png"
+import img_body_ns_2 from "../../res/inchworm_ns_2.png"
+import img_body_nw_2 from "../../res/inchworm_nw_2.png"
+import img_body_sw_2 from "../../res/inchworm_sw_2.png"
+import img_body_we_2 from "../../res/inchworm_we_2.png"
+import img_head_n_2 from "../../res/inchworm_head_n_2.png"
+import img_head_e_2 from "../../res/inchworm_head_e_2.png"
+import img_head_s_2 from "../../res/inchworm_head_s_2.png"
+import img_butt_n_2 from "../../res/inchworm_butt_n_2.png"
+import img_butt_e_2 from "../../res/inchworm_butt_e_2.png"
+import img_butt_s_2 from "../../res/inchworm_butt_s_2.png"
+import { useAnimFrame } from "../hooks/UseAnimFrame";
+import clsx from "clsx";
 
 type MidSegmentImages = {
 	n: string;
@@ -57,6 +69,25 @@ const BUTT_IMAGES: EndSegmentImages = {
 	n: img_butt_n,
 	s: img_butt_s,
 	e: img_butt_e,
+}
+
+
+const BODY_IMAGES_2: MidSegmentImages = {
+	n: img_body_ns_2,
+	s: img_body_ns_2,
+	e: img_body_we_2,
+	nw: img_body_nw_2,
+	sw: img_body_sw_2,
+}
+const HEAD_IMAGES_2: EndSegmentImages = {
+	n: img_head_n_2,
+	s: img_head_s_2,
+	e: img_head_e_2,
+}
+const BUTT_IMAGES_2: EndSegmentImages = {
+	n: img_butt_n_2,
+	s: img_butt_s_2,
+	e: img_butt_e_2,
 }
 
 const isCorner = (path: Vector2[], ind: number) => {
@@ -105,6 +136,7 @@ const HEAD_ID = "InchwormHead";
 const TAIL_ID = "InchwormTail";
 
 export function Inchworm(props: Props) {
+	const frame = useAnimFrame(HEAD_ID);
 	const level = useLevel();
 	
 	const entities: AnyEntity[] = [];
@@ -229,19 +261,22 @@ export function Inchworm(props: Props) {
 				const ind = (ent.data.head - indRaw + props.path.length) % props.path.length;
 				const isEnd = ind === ent.data.head || ind === (ent.data.head - ent.data.length + 1 + props.path.length) % props.path.length
 				const [ img, flip ] = isEnd 
-					? getRotatedEndSegment(ind === ent.data.head ? HEAD_IMAGES : BUTT_IMAGES, props.path, ind, ind === ent.data.head) 
-					: getRotatedMidSegment(BODY_IMAGES, props.path, ind);
+					? getRotatedEndSegment(ind === ent.data.head ? HEAD_IMAGES : BUTT_IMAGES, props.path, ind, ind === ent.data.head) : getRotatedMidSegment(BODY_IMAGES, props.path, ind);
+				const [ img2, flip2 ] = isEnd 
+					? getRotatedEndSegment(ind === ent.data.head ? HEAD_IMAGES_2 : BUTT_IMAGES_2, props.path, ind, ind === ent.data.head) : getRotatedMidSegment(BODY_IMAGES_2, props.path, ind);
 				const pos = props.path[ind];
 				return (
 					<div 
 						ref={entities[indRaw].ref}
-						class="size-24 bg-cover absolute transition-[translate] duration-100 z-0"
-						style={{
-							backgroundImage: `url(${img})`,
-							translate: posToTranslate(pos),
-							transform: `scaleX(${flip ? -1 : 1})`
-						}}
-					/>
+						class="size-24 absolute transition-core duration-100 z-0"
+						style={{ translate: posToTranslate(pos) }}
+					>
+						<div class={clsx("w-full h-full inset-0 absolute bg-cover", frame % 2 === 0 && "opacity-0")}
+							style={{ backgroundImage: `url(${img})`, transform: `scaleX(${flip ? -1 : 1})` }}/>
+						<div class={clsx("w-full h-full inset-0 absolute bg-cover", frame % 2 === 1 && "opacity-0")}
+							style={{ backgroundImage: `url(${img2})`, transform: `scaleX(${flip2 ? -1 : 1})` }}/>
+					</div>
+				
 				)
 			})}
 			

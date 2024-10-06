@@ -10,6 +10,7 @@ import clsx from 'clsx';
 import useStore from '../hooks/UseStore';
 import { useCallback, useEffect } from 'preact/hooks';
 import { wait } from '../Util';
+import { useAnimFrame } from '../hooks/UseAnimFrame';
 
 interface Props {
 	getLevelProgress: (number: number) => LevelProgress;
@@ -17,6 +18,7 @@ interface Props {
 }
 
 export function MenuScene(props: Props) {
+	const frame = useAnimFrame();
 	const opacity = useStore(0);
 	useEffect(() => void requestAnimationFrame(() => opacity(1)), []);
 
@@ -43,9 +45,13 @@ export function MenuScene(props: Props) {
 									!unlocked && "opacity-30")}
 								style={{ width: `24px`, scale: `300%` }}
 							>
-								<div class="absolute z-0 inset-0" style={{ 
+								<div class={clsx("absolute z-0 inset-0", frame % 2 === 1 && "opacity-0")} style={{ 
 									backgroundImage: `url(${img_level_icon})`,
 									rotate: `${(level.number % 4) * 90}deg`
+								}}></div>
+								<div class={clsx("absolute z-0 inset-0", frame % 2 === 0 && "opacity-0")} style={{ 
+									backgroundImage: `url(${img_level_icon})`,
+									rotate: `${(level.number % 4) * 90 + 90}deg`
 								}}></div>
 								{isCurrent && <div class="absolute z-0 inset-0 animate-ping" style={{ 
 									backgroundImage: `url(${img_level_icon})`,
@@ -54,15 +60,15 @@ export function MenuScene(props: Props) {
 								}}></div>}
 								<p class="font-handwritten text-sky-800 relative leading-none pb-1">{level.number}</p>
 								<div class={"transition-all " + (unlocked ? "scale-1 opacity-100" : "scale-0 opacity-0")}>
-									<div class="bg-cover absolute -translate-x-1/2 top-full -left-0.5 mt-1 aspect-square"
+									<div class={clsx("bg-cover absolute [translate:-50%_0%] top-full -left-0.5 mt-1 aspect-square", progress.completed && "animate-text-bob")}
 										title="Level Completed"
-										style={{ backgroundImage: `url(${progress.completed ? img_star : img_star_outline})`, width: `16px` }}/>
-									<div class="bg-cover absolute -translate-x-1/2 top-full left-1/2 mt-1 aspect-square"
-										style={{ backgroundImage: `url(${progress.noUndo ? img_star : img_star_outline})`, width: `16px` }}
-											title="No Undo-s"
+										style={{ backgroundImage: `url(${progress.completed ? img_star : img_star_outline})`, width: `16px`, '--i': 0 }}/>
+									<div class={clsx("bg-cover absolute [translate:-50%_0%] top-full left-1/2 mt-1 aspect-square", progress.noUndo && "animate-text-bob")}
+										style={{ backgroundImage: `url(${progress.noUndo ? img_star : img_star_outline})`, width: `16px`, '--i': 3 }}
+											title="No Undo"
 										/>
-									<div class="bg-cover absolute translate-x-1/2 top-full -right-0.5 mt-1 aspect-square"
-										style={{ backgroundImage: `url(${progress.minMoves ? img_star : img_star_outline})`, width: `16px` }}
+									<div class={clsx("bg-cover absolute [translate:50%_0%] top-full -right-0.5 mt-1 aspect-square", progress.minMoves && "animate-text-bob")}
+										style={{ backgroundImage: `url(${progress.minMoves ? img_star : img_star_outline})`, width: `16px`, '--i': 7 }}
 										title="Minimum Moves"/>
 								</div>
 							</button>

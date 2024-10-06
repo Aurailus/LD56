@@ -11,6 +11,7 @@ import { directionFromOffset, rotateDirection } from "../Direction";
 import img_player from "../../res/player.png";
 import img_player_2 from "../../res/player_2.png";
 import { pulseFrame, useAnimFrame } from "../hooks/UseAnimFrame";
+import clsx from "clsx";
 
 interface Props {
 	pos: Vector2;
@@ -103,13 +104,16 @@ export function Player(props: Props) {
 	return (
 		<div 
 			ref={ent.ref}
-			class="size-24 bg-cover absolute transition-core duration-100 z-50"
+			class="size-24 absolute transition-core duration-100 z-50"
 			style={{
-				backgroundImage: (frame % 2) === 1 ? `url(${img_player_2})` : `url(${img_player})`,
 				translate: posToTranslate(ent.data.pos),
 				rotate: `${rotateDirection(ent.data.direction) + 180}deg`
 			}}
 		>
+			<div class={clsx("w-full h-full inset-0 absolute bg-cover", frame % 2 === 0 && "opacity-0")}
+				style={{ backgroundImage: `url(${img_player})` }}/>
+			<div class={clsx("w-full h-full inset-0 absolute bg-cover", frame % 2 === 1 && "opacity-0")}
+				style={{ backgroundImage: `url(${img_player_2})` }}/>
 		</div>
 	)
 } 

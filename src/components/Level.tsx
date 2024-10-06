@@ -53,7 +53,7 @@ export function Level(props: Props) {
 		console.log(currHist)
 		if (currHist) {
 			currHist.map((newData, ind) => data.entities[ind].setData(clone(newData)));
-			history.splice(1, currHist.length - 1);
+			history.splice(1, history.length - 1);
 		}
 		data.numMoves = 0;
 		data.usedUndo = false;
@@ -136,8 +136,8 @@ export function Level(props: Props) {
 
 	const complete = useCallback(() => {
 		awaitFn(new Promise(() => {}));
-		isComplete(true);
-		wait(1000).then(() => props.onComplete(data.numMoves, data.usedUndo));
+		wait(150).then(() => isComplete(true));
+		wait(1200).then(() => props.onComplete(data.numMoves, data.usedUndo));
 	}, []);
 
 	const levelState = useMemo<LevelState>(() => ({
@@ -174,7 +174,7 @@ export function Level(props: Props) {
 
 	return (
 		<LevelStateContext.Provider value={diffedLevelState}>
-			<div class={clsx("w-screen h-screen grid place-items-center transition bg-transparent duration-200 [perspective:200px]", isComplete() && "scale-125 !bg-sky-600")}>
+			<div class={clsx("w-screen h-screen grid place-items-center transition bg-transparent duration-200 [perspective:200px]", isComplete() && "scale-125 !bg-green-700")}>
 				<div ref={screenRef} class="will-change-transform isolate relative grid [&>*]:[grid-area:a] rounded-xl 
 					overflow-hidden shadow-lg shadow-black/30 transition-all duration-300" style={{
 					gridTemplateAreas: "a",
