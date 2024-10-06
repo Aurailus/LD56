@@ -23,6 +23,8 @@ export type LevelState = {
 	getTile(pos: Vector2): number;
 	getEntity(pos: Vector2, ignore?: AnyEntity): AnyEntity | null;
 	await(res: Promise<void>): Promise<void>;
+	writeUndoStep(): void;
+	undo(): void;
 };
 
 export const LevelStateContext = createContext<LevelState>({} as any);

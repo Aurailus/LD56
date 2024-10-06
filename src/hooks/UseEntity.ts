@@ -5,6 +5,7 @@ import { bumpElem, stripUndefined } from "../Util";
 import { RefObject } from "preact";
 
 export type AnyEntity = Entity<any>;
+export type BaseEntity = Entity<{}>;
 
 export type PushResult = {
 	canPush: boolean
@@ -21,12 +22,12 @@ export interface EntityProps<T extends Record<string, any>> {
 	pos: Vector2;
 	data: T;
 
-	canPush(self: AnyEntity, other: AnyEntity): boolean;
-	onPush(self: AnyEntity, other: AnyEntity): Promise<void>;
-	canCollide(self: AnyEntity, other: AnyEntity): boolean;
-	onCollide(self: AnyEntity, other: AnyEntity): Promise<void>;
-	onStep: (self: AnyEntity) => Promise<void>;
-	bump: (self: AnyEntity, from: Vector2, mag: number) => Promise<void>;
+	canPush(self: Entity<T>, other: AnyEntity): boolean;
+	onPush(self: Entity<T>, other: AnyEntity): Promise<void>;
+	canCollide(self: Entity<T>, other: AnyEntity): boolean;
+	onCollide(self: Entity<T>, other: AnyEntity): Promise<void>;
+	onStep: (self: Entity<T>) => Promise<void>;
+	bump: (self: Entity<T>, from: Vector2, mag: number) => Promise<void>;
 }
 
 const DEFAULT_ENTITY_PROPS = {
@@ -55,6 +56,7 @@ export interface Entity<T extends Record<string, any>> {
 	ref: RefObject<HTMLDivElement>
 	setPos: (newPos: Vector2) => void;
 	setDead: (dead: boolean) => void;
+	setData: (data: Partial<T>) => void; 
 	bump: (from: Vector2, mag?: number) => void;
 }
 

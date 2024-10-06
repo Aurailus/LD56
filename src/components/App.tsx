@@ -22,7 +22,7 @@ const LEVELS = [
 ];
 
 export default function App() {
-	const level = useStore<number>(7);
+	const level = useStore<number>(5);
 	const LevelComponent = LEVELS[level()];
 
 	useEffect(() => {

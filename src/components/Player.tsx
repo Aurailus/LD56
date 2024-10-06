@@ -3,16 +3,14 @@ import { useEntity } from "../hooks/UseEntity"
 import { Vector2 } from "three";
 
 import img_player from "../../res/player.png";
-import { useCallback, useEffect, useRef } from "preact/hooks";
+import { useEffect } from "preact/hooks";
 import { InputState, useLevel } from "../hooks/UseLevel";
-import { bumpElem, posToTranslate, translateToPos, wait } from "../Util";
+import { posToTranslate, wait } from "../Util";
+import { dvorak } from "../Main";
 
 interface Props {
 	pos: Vector2;
 }
-
-const dvorak = true;
-
 
 export function Player(props: Props) {
 	const level = useLevel();
@@ -41,17 +39,21 @@ export function Player(props: Props) {
 	useEffect(() => {
 		const keyDown = async (e: KeyboardEvent) => {
 			const newPos = ent.data.pos.clone();
-			if ((e.key === "w" && !dvorak) || (e.key === "," && dvorak) || (e.key === "ArrowUp"))
-				newPos.add(new Vector2(0, -1));
-			else if ((e.key === "a" && !dvorak) || (e.key === "a" && dvorak) || (e.key === "ArrowLeft"))
-				newPos.add(new Vector2(-1, 0));
-			else if ((e.key === "s" && !dvorak) || (e.key === "o" && dvorak) || (e.key === "ArrowDown"))
-				newPos.add(new Vector2(0, 1));
-			else if ((e.key === "d" && !dvorak) || (e.key === "e" && dvorak) || (e.key === "ArrowRight"))
-				newPos.add(new Vector2(1, 0));
+			
+			if (!e.repeat) {
+				if ((e.key === "w" && !dvorak) || (e.key === "," && dvorak) || (e.key === "ArrowUp"))
+					newPos.add(new Vector2(0, -1));
+				else if ((e.key === "a" && !dvorak) || (e.key === "a" && dvorak) || (e.key === "ArrowLeft"))
+					newPos.add(new Vector2(-1, 0));
+				else if ((e.key === "s" && !dvorak) || (e.key === "o" && dvorak) || (e.key === "ArrowDown"))
+					newPos.add(new Vector2(0, 1));
+				else if ((e.key === "d" && !dvorak) || (e.key === "e" && dvorak) || (e.key === "ArrowRight"))
+					newPos.add(new Vector2(1, 0));
+			}
 
 			if (level.data.inputState === InputState.Input) {
 				if (newPos.clone().sub(ent.data.pos).lengthSq() !== 0) {
+					level.writeUndoStep();
 					level.data.inputState = InputState.Waiting;
 					const collision = level.testCollision(newPos, ent)
 					const push = level.testPush(newPos, ent)
@@ -64,7 +66,11 @@ export function Player(props: Props) {
 					level.step();
 				}
 				else if (e.key === " ") {
+					level.writeUndoStep();
 					level.step();
+				}
+				else if (e.key === "z" || (dvorak && e.key === ";")) {
+					level.undo();
 				}
 			}
 		}

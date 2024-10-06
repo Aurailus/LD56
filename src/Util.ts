@@ -50,3 +50,29 @@ export const bumpElem = (elem: HTMLElement | null, dir: Vector2, mag: number = 1
 	}
 	return wait(100);
 }
+
+export const clone = (obj: Record<string, any>) => {
+	const cloneVal = (v: any): any => {
+		if (typeof v === "string" || typeof v === "number" || typeof v === "boolean" || v === null || v === undefined) {
+			return v;
+		}
+		if (v instanceof Vector2) {
+			return v.clone();
+		}
+		if (Array.isArray(v)) {
+			return [...v.map(cloneVal)];
+		}
+		if (typeof v === "object") {
+			return clone(v);
+		}
+		console.error("Unknown type to clone: ", v);
+		return null;
+	}
+
+	const newObj: Record<string, any> = {};
+	for (const [ k, v ] of Object.entries(obj)) {
+		newObj[k] = cloneVal(v);
+	}
+
+	return newObj;
+}

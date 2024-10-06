@@ -7,7 +7,6 @@ interface Props {
 
 export function Background(props: Props) {
 	const state = useLevel();
-	console.log(state.data.tilemap)
 	return (
 		<div 
 			class="bg-cover" 

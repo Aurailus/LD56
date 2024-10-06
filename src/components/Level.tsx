@@ -1,9 +1,11 @@
 import { ComponentChildren, h } from "preact";
-import { useCallback, useMemo, useRef, useState } from "preact/hooks";
+import { useCallback, useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { Vector2 } from "three";
 import { PushResult, Entity, CollisionResult, AnyEntity } from "../hooks/UseEntity";
 import { InputState, LevelState, LevelStateContext, LevelStateData } from "../hooks/UseLevel";
 import { Tile } from "../Tile";
+import { dvorak } from "../Main";
+import { clone } from "../Util";
 
 interface Props {
 	tilemap: number[][],
@@ -14,11 +16,25 @@ export function Level(props: Props) {
 	const [ integrity, setIntegrity ] = useState<number>(0);
 	const rerender = useCallback(() => setIntegrity(i => i + 1), []);
 
+	const history = useMemo<Record<string, any>[][]>(() => [], []);
+	useEffect(() => { history.push(data.entities.map(ent => clone(ent.data))) }, [])
+
 	const data = useMemo<LevelStateData>(() => ({ 
 		entities: [], 
 		inputState: InputState.Input,
 		tilemap: props.tilemap
 	}), []);
+
+	const writeUndoStep = useCallback(() => {
+		history.push(data.entities.map(ent => clone(ent.data)));
+	}, []);
+
+	const undo = useCallback(() => {
+		const currHist = history.pop();
+		if (!currHist) return;
+		currHist.map((newData, ind) => data.entities[ind].setData(newData));
+		rerender();
+	}, []);
 
 	const awaitingPromises = useRef<Promise<void>[]>([]);
 
@@ -97,6 +113,8 @@ export function Level(props: Props) {
 		getTile,
 		getEntity,
 		step,
+		writeUndoStep,
+		undo
 	}), []);
 
 	const diffedLevelState = useMemo(() => ({ ...levelState }), [ integrity ]);

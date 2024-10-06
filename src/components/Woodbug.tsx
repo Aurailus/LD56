@@ -3,7 +3,6 @@ import { Vector2 } from "three";
 import { useEntity } from "../hooks/UseEntity";
 import { useLevel } from "../hooks/UseLevel";
 import { posToTranslate, wait } from "../Util";
-import useStore from "../hooks/UseStore";
 
 import img_woodbug from "../../res/woodbug.png"
 import img_woodbug_closed from "../../res/woodbug_closed.png"
@@ -50,16 +49,17 @@ const offsetFromDirection = (dir: Direction) => {
 
 export function Woodbug(props: Props) {
 	const level = useLevel();
-	const direction = useStore<Direction | null>(props.direction)
-	const ent = useEntity(() => ({
+	const ent = useEntity<{ direction: Direction | null }>(() => ({
 		name: ID,
-		data: {},
+		data: { 
+			direction: props.direction 
+		},
 		pos: props.pos,
 		canPush: () => false,
 		canCollide: () => true,
 		onCollide: async (_, other) => {
 			const posDiff = ent.data.pos.clone().sub(other.data.pos).normalize();
-			if (other.props.name === "Log" && directionFromOffset(posDiff.clone().negate()) === direction()) {
+			if (other.props.name === "Log" && directionFromOffset(posDiff.clone().negate()) === ent.data.direction) {
 				level.await(wait(200));
 				ent.bump(other.data.pos, 3);
 				other.setPos(ent.data.pos.clone());
@@ -68,13 +68,13 @@ export function Woodbug(props: Props) {
 			else {
 				const otherPos = other.data.pos;
 				wait(50).then(() => ent.bump(otherPos, -1));
-				if (!direction()) direction(directionFromOffset(posDiff));
-				else if (direction() === directionFromOffset(posDiff.negate())) direction(null);
+				if (!ent.data.direction) ent.setData({ direction: directionFromOffset(posDiff) });
+				else if (ent.data.direction === directionFromOffset(posDiff.negate())) ent.setData({ direction: null });
 			}
 		},
 		onStep: async () => {
-			if (direction() && props.agro) {
-				const testPos = ent.data.pos.clone().add(offsetFromDirection(direction()!));
+			if (ent.data.direction && props.agro) {
+				const testPos = ent.data.pos.clone().add(offsetFromDirection(ent.data.direction));
 				const collides = level.testCollision(testPos, ent);
 				if (collides.entity?.props.name === "Log") {
 					await wait(300);
@@ -91,9 +91,9 @@ export function Woodbug(props: Props) {
 		<div ref={ent.ref}
 			class="size-8 bg-cover absolute transition-[translate] duration-100 z-10"
 			style={{
-				background: `url(${direction() === null ? img_woodbug_closed : img_woodbug})`,
+				background: `url(${ent.data.direction === null ? img_woodbug_closed : img_woodbug})`,
 				translate: posToTranslate(ent.data.pos),
-				rotate: direction() ? `${rotateDirection(direction()!)}deg` : '',
+				rotate: ent.data.direction ? `${rotateDirection(ent.data.direction)}deg` : '',
 				filter: props.agro ? `sepia(100%) saturate(300%) hue-rotate(-45deg)` : ''
 			}}
 		>
