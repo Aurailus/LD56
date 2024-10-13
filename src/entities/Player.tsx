@@ -78,10 +78,10 @@ export function Player(props: Props) {
 					promises.push(collision.entity?.props.onPush(collision.entity!, ent) ?? Promise.resolve());
 					if (push.canPush || !collision.collides) {
 						ent.setPos(newPos);
-						new Howl({ src: sfx_move, html5: true, rate: Math.random() * 0.5 + 2, volume: 0.6 }).play();
+						new Howl({ src: sfx_move, rate: Math.random() * 0.5 + 2, volume: 0.6 }).play();
 					}
 					else {
-						new Howl({ src: sfx_bump, html5: true, rate: Math.random() * 0.3 + 0.3, volume: 0.6 }).play();
+						new Howl({ src: sfx_bump, rate: Math.random() * 0.3 + 0.3, volume: 0.6 }).play();
 					}
 					await Promise.all(promises);
 					level.step();
@@ -89,7 +89,7 @@ export function Player(props: Props) {
 				}
 				else if (e.key === " ") {
 					level.writeUndoStep();
-					new Howl({ src: sfx_bump, html5: true, rate: Math.random() * 0.4 + 0.8, volume: 0.7 }).play();
+					new Howl({ src: sfx_bump, rate: Math.random() * 0.4 + 0.8, volume: 0.7 }).play();
 					const upPos = ent.data.pos.clone().add(new Vector2(0, -1));
 					ent.bump(upPos);
 					level.step();

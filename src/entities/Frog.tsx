@@ -41,13 +41,13 @@ export function Frog(props: Props) {
 				level.await(wait(200));
 				ent.bump(other.data.pos, 3);
 				other.setPos(ent.data.pos.clone());
-				new Howl({ src: sfx_frog_eat, html5: true, rate: Math.random() * 0.3 + 1, volume: 0.6 }).play();
+				new Howl({ src: sfx_frog_eat, rate: Math.random() * 0.3 + 1, volume: 0.6 }).play();
 				wait(50).then(() => other.setDead(true));
 			}
 			else {
 				const otherPos = other.data.pos;
 				wait(50).then(() => ent.bump(otherPos, -1));
-				wait(100).then(() => new Howl({ src: sfx_frog_wake_up, html5: true, rate: Math.random() * 0.3 + 1, volume: 0.9 }).play());
+				wait(100).then(() => new Howl({ src: sfx_frog_wake_up, rate: Math.random() * 0.3 + 1, volume: 0.9 }).play());
 				if (!ent.data.direction) ent.setData({ direction: directionFromOffset(posDiff) });
 				// else if (ent.data.direction === directionFromOffset(posDiff.negate())) ent.setData({ direction: null });
 			}
@@ -61,7 +61,7 @@ export function Frog(props: Props) {
 					level.await(wait(200));
 					ent.bump(collides.entity.data.pos, 3);
 					collides.entity.setPos(ent.data.pos.clone());
-					new Howl({ src: sfx_frog_eat, html5: true, rate: Math.random() * 0.3 + 1, volume: 0.9 }).play();
+					new Howl({ src: sfx_frog_eat, rate: Math.random() * 0.3 + 1, volume: 0.9 }).play();
 					wait(50).then(() => collides.entity!.setDead(true));
 				}
 			}

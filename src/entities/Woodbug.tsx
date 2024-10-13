@@ -50,7 +50,7 @@ export function Woodbug(props: Props) {
 			!ent.data.submerged,
 		canCollide: (ent, other) => {
 			if (ent.data.submerged && other.props.name === "Player") {
-				new Howl({ src: sfx_splash, html5: true, rate: Math.random() * 0.3 + 1.8, volume: 0.3 }).play();
+				new Howl({ src: sfx_splash, rate: Math.random() * 0.3 + 1.8, volume: 0.3 }).play();
 			}
 			return !ent.data.submerged
 		},
@@ -99,7 +99,7 @@ export function Woodbug(props: Props) {
 					dstPos = testPos;
 				}
 				ent.setPos(dstPos);
-				new Howl({ src: sfx_roll, html5: true, rate: Math.random() * 0.2 + 0.65, volume: 0.4 }).play();
+				new Howl({ src: sfx_roll, rate: Math.random() * 0.2 + 0.65, html5: true, volume: 0.4 }).play();
 				level.await(new Promise((res) => setTimeout(res, 90)));
 				setTimeout(() => hiding(false), 300);
 				await new Promise((res) => setTimeout(res, 80));
@@ -108,7 +108,7 @@ export function Woodbug(props: Props) {
 		onStep: async () => {
 			if (!ent.data.submerged && level.getTile(ent.data.pos) === Tile.Water && level.getEntity(ent.data.pos, ent) === null) {
 				ent.setData({ submerged: true });
-				new Howl({ src: sfx_splash, html5: true, rate: Math.random() * 0.3 + 0.85, volume: 0.6 }).play();
+				new Howl({ src: sfx_splash, rate: Math.random() * 0.3 + 0.85, volume: 0.6, html5: true }).play();
 			}
 		}
 	}))

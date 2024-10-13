@@ -32,7 +32,7 @@ export function Level(props: Props) {
 	const history = useMemo<Record<string, any>[][]>(() => [], []);
 	useEffect(() => { 
 		history.push(data.entities.map(ent => clone(ent.data))) 
-		new Howl({ src: sfx_level_enter, html5: true, rate: Math.random() * 0.2 + 1, volume: 0.6 }).play();
+		new Howl({ src: sfx_level_enter, rate: Math.random() * 0.2 + 1, volume: 0.6 }).play();
 	}, [])
 
 	const data = useMemo<LevelStateData>(() => ({ 
@@ -54,10 +54,10 @@ export function Level(props: Props) {
 		const currHist = history.pop();
 
 		if (!currHist) {
-			new Howl({ src: sfx_bump, html5: true, rate: Math.random() * 0.3 + 0.3, volume: 0.6 }).play();
+			new Howl({ src: sfx_bump, rate: Math.random() * 0.3 + 0.3, volume: 0.6 }).play();
 			return
 		};
-		new Howl({ src: sfx_move, html5: true, rate: Math.random() * 0.3 + 0.3, volume: 0.6 }).play();
+		new Howl({ src: sfx_move, rate: Math.random() * 0.3 + 0.3, volume: 0.6 }).play();
 
 		currHist.map((newData, ind) => data.entities[ind].setData(clone(newData)));
 		rerender();
@@ -66,7 +66,7 @@ export function Level(props: Props) {
 	const restart = useCallback(() => {
 		const currHist = history.at(0);
 		if (currHist) {
-			new Howl({ src: sfx_level_enter, html5: true, rate: Math.random() * 0.2 + 1, volume: 0.6 }).play();
+			new Howl({ src: sfx_level_enter, rate: Math.random() * 0.2 + 1, volume: 0.6 }).play();
 			currHist.map((newData, ind) => data.entities[ind].setData(clone(newData)));
 			history.splice(1, history.length - 1);
 		}
@@ -151,8 +151,8 @@ export function Level(props: Props) {
 
 	const complete = useCallback(() => {
 		awaitFn(new Promise(() => {}));
-		new Howl({ src: sfx_yippee, html5: true, rate: 1.4, volume: 0.7 }).play();
-		wait(400).then(() => new Howl({ src: sfx_level_win, html5: true, rate: 0.7, volume: 0.3 }).play());
+		new Howl({ src: sfx_yippee, rate: 1.4, volume: 0.7, html5: true }).play();
+		wait(400).then(() => new Howl({ src: sfx_level_win, rate: 0.7, volume: 0.3, html5: true }).play());
 				
 		wait(150).then(() => isComplete(true));
 		wait(1200).then(() => props.onComplete(data.numMoves, data.usedUndo));

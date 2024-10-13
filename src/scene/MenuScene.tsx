@@ -62,7 +62,7 @@ export function MenuScene(props: Props) {
 								scale: `80%`,
 							}}></div>}
 							<p class="font-handwritten text-sky-800 relative leading-none pb-1">{level.number}</p>
-							<div class={"transition-all " + (unlocked ? "scale-1 opacity-100" : "scale-0 opacity-0")}>
+							<div class={"transition-all " + (progress.completed ? "scale-1 opacity-100" : "scale-0 opacity-0")}>
 								<div class={clsx("bg-cover absolute [translate:-50%_0%] top-full -left-0.5 mt-1 aspect-square", progress.completed && "animate-text-bob")}
 									title="Level Completed"
 									style={{ backgroundImage: `url(${progress.completed ? img_star : img_star_outline})`, width: `16px`, '--i': 0 }}/>
